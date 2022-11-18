@@ -10,7 +10,7 @@ Using this API call to get an AWS account in API Server Manager. The encrypted f
 
 > **Version** : 03/09/2022
 
-> **API Server URL** : http(s):// IP address of your NetBrain Web API Server /ServicesAPI/V1/CMDB/ApiServers/AWSAccounts/{id}
+> **API Server URL** : http(s):// IP address of your NetBrain Web API Server /ServicesAPI/API/V1/CMDB/ApiServers/AWSAccounts/{id}
 
 > **Authentication** : 
 

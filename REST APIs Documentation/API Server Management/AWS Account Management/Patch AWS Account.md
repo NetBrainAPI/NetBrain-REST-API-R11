@@ -10,7 +10,7 @@ Using this API call to update credential for an AWS account in API Server Manage
 
 > **Version** : 03/10/2022
 
-> **API Server URL** : http(s):// IP address of your NetBrain Web API Server /ServicesAPI/V1/CMDB/ApiServers/AWSAccounts
+> **API Server URL** : http(s):// IP address of your NetBrain Web API Server /ServicesAPI/API/V1/CMDB/ApiServers/AWSAccounts
 
 > **Authentication** : 
 

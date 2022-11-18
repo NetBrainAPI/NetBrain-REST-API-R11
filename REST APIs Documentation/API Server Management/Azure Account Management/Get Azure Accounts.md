@@ -10,7 +10,7 @@ Using this API call to get Azure accounts in API Server Manager. The encrypted f
 
 > **Version** : 07/12/2022
 
-> **API Server URL** : http(s):// IP address of your NetBrain Web API Server /ServicesAPI/V1/CMDB/ApiServers/AzureAccounts
+> **API Server URL** : http(s):// IP address of your NetBrain Web API Server /ServicesAPI/API/V1/CMDB/ApiServers/AzureAccounts
 
 > **Authentication** : 
 
