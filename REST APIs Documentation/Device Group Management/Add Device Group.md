@@ -10,7 +10,7 @@ This API call adds a device group
 
 > **Version** : 03/08/2022
 
-> **API Server URL** : http(s):// IP address of your NetBrain Web API Server /ServicesAPI/V1/CMDB/DeviceGroups
+> **API Server URL** : http(s):// IP address of your NetBrain Web API Server /ServicesAPI/API/V1/CMDB/DeviceGroups
 
 > **Authentication** : 
 
