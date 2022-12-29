@@ -28,9 +28,9 @@ Call this API to create a new user account in Netbrain system.
 |email* | string  | The email address of the user. This parameter is required. |
 |firstName* | string  | The first name of the user. This parameter is required.  |
 |lastName* | string  | The last name of the user. This parameter is required. |
-|password* | string  | The login password. The allowed length is 6-128 characters by default. This parameter is required.  |
-|authenticationServer | string |The name of the authentication server for create an external account.|
-|externalUserIdentity | string |the corresponding external user identity base one the authentication server. This attribute must be inserted when customer want to create an external user account via REST API. 
+|password* | string  | The login password. The allowed length is 6-128 characters by default. This is an optional parameter when create external authentication user. |
+|authenticationServer | string |The name of the authentication server for create an external account. This API only support SSO Authentication.|
+|externalUserIdentity | string |The corresponding external user identity base on authentication server. This is a mandated attribute when create an external authentication user account.|  
 |phoneNumber | string |The phone number of the user.|
 |department | string |The department that the user belongs to.|
 |description | string |Any description about the account.|
@@ -129,11 +129,10 @@ headers["Token"] = token
 body = {
         "username": "externalAccount",
         "externalUserIdentity":"xxxx",
-        "authenticationServer":"TACACS",
+        "authenticationServer":"SSO",
         "email": "user1@netbrain.com",
         "firstName": "user1",
         "lastName": "user1",
-        "password": "user1",
         "phoneNumber" : "",
         "department" : "",
         "description" : "",
@@ -178,11 +177,10 @@ curl -X POST \
   -d '{
         "username": "externalAccount",
         "externalUserIdentity":"xxxx",
-        "authenticationServer":"TACACS",
+        "authenticationServer":"SSO",
         "email": "user1@netbrain.com",
         "firstName": "user1",
         "lastName": "user1",
-        "password": "user1",
         "phoneNumber" : "",
         "department" : "",
         "description" : "",
