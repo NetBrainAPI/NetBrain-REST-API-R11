@@ -123,7 +123,7 @@ api_body = {
     "option": {
         "scope":"Demo",
         "source":"https://notapplicable.com",
-        "category":"Event"
+        "category":"Event",
         "ticketId":"INC000054"
     }
 }
