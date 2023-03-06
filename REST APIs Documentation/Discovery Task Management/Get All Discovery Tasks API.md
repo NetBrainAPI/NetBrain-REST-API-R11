@@ -1,7 +1,7 @@
 
 # Discovery API Design
 
-## ***GET*** /V1/CMDB/Devices/Discovery/Tasks
+## ***GET*** /V1/CMDB/Discovery/Tasks
 Call this API to get all discovery tasks from current domain.
 >* **Tip:** If there are no discovery tasks in the system, add a new discovery task from the Domain Management page. In the discovery task, select Once on the Frequency tab and Discover the following IPs on the Discovery Seed tab.
 <br><br>
