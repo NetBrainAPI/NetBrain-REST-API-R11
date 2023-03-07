@@ -17,7 +17,7 @@ ServiceNow change request ticketing system as an example.
 
 **Workflow** 
 ================
-![](media/Blank diagram (4).png)
+![](media/Blankdiagram(4).png)
 
 **Requirements** 
 =================
