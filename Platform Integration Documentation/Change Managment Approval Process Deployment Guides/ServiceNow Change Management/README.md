@@ -15,6 +15,10 @@ ServiceNow Change approver are fully isolated which means they are not necessary
 to have access cross systems. In this document, NetBrain integrate with
 ServiceNow change request ticketing system as an example.
 
+**Workflow** 
+================
+![](media/Blank diagram (4).png)
+
 **Requirements** 
 =================
 
