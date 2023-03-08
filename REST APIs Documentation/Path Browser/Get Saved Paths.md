@@ -11,7 +11,7 @@ Using this API call to get saved paths from Path Browser.
 
 > **Version** : 07/12/2022
 
-> **API Server URL** : http(s):// IP address of your NetBrain Web API Server /ServicesAPI/V1/CMDB/PathBrowser/Paths
+> **API Server URL** : http(s):// IP address of your NetBrain Web API Server /ServicesAPI/API/V1/CMDB/PathBrowser/Paths
 
 > **Authentication** : 
 
