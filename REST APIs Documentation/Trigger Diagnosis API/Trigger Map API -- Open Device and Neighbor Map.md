@@ -40,7 +40,7 @@ Call this API to trigger a map built by Netbrain from third part software.
 | map_setting.map_device_para.device* | string | device name |
 | map_setting.map_device_para.include_neighbor | bool | include neighbor flag |
 | map_setting.map_device_para.interfaces | list | interface name list |
-| map_setting.map_device_para.neighbor_type | string | topo Link type id |
+| map_setting.map_device_para.neighbor_type | string | neighbor topology type:<br>L3_Topo_Type<br>L2_Topo_Type |
 
 
 ```python
