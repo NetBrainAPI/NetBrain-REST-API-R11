@@ -1,7 +1,7 @@
 
 # Discovery API Design
 
-## ***GET*** /V1/CMDB/Devices/Discovery/Tasks/{task}/Results
+## ***GET*** /V1/CMDB/Discovery/Tasks/{task}/Results
 Call this API to get the running result of specified ip addresses for a discovery task of the latest run.
 > **Note**: users cannot put too many ip addresses in the query parameter, which will make the URLs over 2,000 characters and it will not work in some web browsers.<br> {task} means {taskId} or {taskName}
 
