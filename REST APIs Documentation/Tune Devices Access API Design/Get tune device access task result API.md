@@ -52,7 +52,7 @@ This API call is used to get tune task status and result
 |**Name**|**Type**|**Description**|
 |------|------|------|
 |taskId	|string	|tune device task ID, which can be use to query task status later on.|
-|status	|int	|Status code. <br>Unknown = 0,<br>Scheduled = 1, <br>Started = 2, <br>Running = 3, <br>CompletedNormally = 4, <br>CompletedWithException = 5, <br>CompletedCrash = 6, <br>Canceled = 7|
+|status	|int	|Status code. <br>Invalid = -1, <br>Started = 0,<br>Running = 1, <br>Stopping = 2, <br>Stopped = 3
 |devices|	list of object|	device tune results|
 |devices.deviceName	|string|	device name|
 |devices.log	|string	|device tune result|
