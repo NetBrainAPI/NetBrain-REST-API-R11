@@ -22,8 +22,8 @@ Call this API to trigger a map built by Netbrain from a third part software.
 
 |**Name**|**Type**|**Description**|
 |---|---|---|
-|domain_setting.tenant_id* | string  | Tenant Id  |
-|domain_setting.domain_id* | string  | Domain Id  |
+|domain_setting.tenant_id* | string  | Tenant ID  |
+|domain_setting.domain_id* | string  | Domain ID  |
 |basic_setting.triggered_by* | string  | Trigger user |
 |basic_setting.user_id | string  | User ID. Not required |
 |basic_setting.user* | string  | User Name |
