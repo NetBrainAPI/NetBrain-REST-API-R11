@@ -29,33 +29,33 @@ Call this API to trigger a map built by Netbrain from third part software.
 |basic_setting.user* | string  | User Name |
 |###|###| ***Note:*** If an external user account is being used, the "user" input value structure should be "autntication_id\\username".|
 |basic_setting.device | string  | Device Name  |
-|basic_setting.interface | string  | Interface Name，Not required  |
+|basic_setting.interface | string  | Interface Namenot required  |
 |basic_setting.stub_name* | string  | Stub Name  |
 |basic_setting.stub_setting | object  | Stub Setting Information  |
-|basic_setting.stub_setting.mode | int  | Triggered Type.<br> 0: Real-Time,<br> 1: On-Demand  |
+|basic_setting.stub_setting.mode | int  | Triggered Type.<br> 0: Real-Time<br> 1: On-Demand  |
 |map_setting | object  | Map Setting Information  |
 |map_setting.map_create_mode* | int  | Create Map Mode.<br>0: Map Device and Its Neighbors.<br>1: Open Site Map of the Device.<br>2: Open Existing Map.<br>3: Map a Path.<br>4: Create an Empty Map.<br>5: Context Map Of Legacy Device<br>6: Context Map Of Cisco ACI Device<br>7: Use Qapp to Create a Map<br>9: Multi devices Create a Map  |
-|###|###|  ***Note:*** the map_create_mode input value must corresponding to the predefined map stub trigger type in NetBrain UI system or "Some of the critical MapPath parameters are missing" response would be occured.|
-| map_setting.map_device_para | object | device parameters for creating map |
-| map_setting.map_device_para.device* | string | device name |
-| map_setting.map_device_para.include_neighbor | bool | include neighbor flag |
-| map_setting.map_device_para.interfaces | list | interface name list |
-| map_setting.map_device_para.neighbor_type | string | neighbor topology type:<br>L3_Topo_Type<br>L2_Topo_Type |
+|###|###|  ***Note:*** the map_create_mode input value must correspond to the predefined map stub trigger type in NetBrain UI system. Otherwise, response "Some of the critical MapPath parameters are missing" will occur.|
+| map_setting.map_device_para | object | Device parameters for creating map |
+| map_setting.map_device_para.device* | string | Device name |
+| map_setting.map_device_para.include_neighbor | bool | Includes neighbor flag |
+| map_setting.map_device_para.interfaces | list | Interface name list |
+| map_setting.map_device_para.neighbor_type | string | Neighbor topology type:<br>L3_Topo_Type<br>L2_Topo_Type |
 
 
 ```python
 body = {
     "domain_setting": {
-        "tenant_id": "", # can not be null.
-        "domain_id": ""  # can not be null.
+        "tenant_id": "", # cannot be null.
+        "domain_id": ""  # cannot be null.
     },
     "basic_setting": {
-        "triggered_by": "", # can not be null.
+        "triggered_by": "", # cannot be null.
         "user_id": "",
-        "user": "", # can not be null.
+        "user": "", # cannot be null.
         "device": "", 
         "interface": "",
-        "stub_name": "", # can not be null.
+        "stub_name": "", # cannot be null.
         "stub_setting": {
             "mode": 0,
             "max_waiting_hours": 1
@@ -96,9 +96,9 @@ body = {
 
 |**Name**|**Type**|**Description**|
 |---|---|---|
-|mapId| string | The ID of the map which users triggered from third party sofware.  |
-|mapName| string | The name of the map. |
-|mapType| string | Create Map Mode.<br>0: Map Device and Its Neighbors.<br>1: Open Site Map of the Device.<br>2: Open Existing Map.<br>3: Map a Path.<br>4: Create an Empty Map.  |
+|mapId| string | ID of the map which users triggered from third party sofware.  |
+|mapName| string | Name of the map. |
+|mapType| string | Create Map Mode.<br>0: Map Device and its Neighbors.<br>1: Open Site Map of the Device.<br>2: Open Existing Map.<br>3: Map a Path.<br>4: Create an Empty Map.  |
 |mapUrl| string | The URL link of the map triggered by users.  |
 |statusCode| integer | The returned status code of executing the API.  |
 |statusDescription| string | The explanation of the status code.  |
