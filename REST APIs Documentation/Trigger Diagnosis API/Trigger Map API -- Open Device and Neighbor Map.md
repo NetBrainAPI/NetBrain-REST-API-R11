@@ -2,7 +2,7 @@
 # Trigger Map API Design -- Device and Neighbor Map
 
 ## ***POST*** /V1/Triggers/Run
-Call this API to trigger a map built by Netbrain from third part software.
+Call this API to trigger a map built by Netbrain from a third part software.
 
 ## Detail Information
 
@@ -25,17 +25,17 @@ Call this API to trigger a map built by Netbrain from third part software.
 |domain_setting.tenant_id* | string  | Tenant Id  |
 |domain_setting.domain_id* | string  | Domain Id  |
 |basic_setting.triggered_by* | string  | Trigger user |
-|basic_setting.user_id | string  | User Id，Not required |
+|basic_setting.user_id | string  | User ID. Not required |
 |basic_setting.user* | string  | User Name |
 |###|###| ***Note:*** If an external user account is being used, the "user" input value structure should be "autntication_id\\username".|
 |basic_setting.device | string  | Device Name  |
-|basic_setting.interface | string  | Interface Namenot required  |
+|basic_setting.interface | string  | Interface Name. Not required  |
 |basic_setting.stub_name* | string  | Stub Name  |
 |basic_setting.stub_setting | object  | Stub Setting Information  |
 |basic_setting.stub_setting.mode | int  | Triggered Type.<br> 0: Real-Time<br> 1: On-Demand  |
 |map_setting | object  | Map Setting Information  |
 |map_setting.map_create_mode* | int  | Create Map Mode.<br>0: Map Device and Its Neighbors.<br>1: Open Site Map of the Device.<br>2: Open Existing Map.<br>3: Map a Path.<br>4: Create an Empty Map.<br>5: Context Map Of Legacy Device<br>6: Context Map Of Cisco ACI Device<br>7: Use Qapp to Create a Map<br>9: Multi devices Create a Map  |
-|###|###|  ***Note:*** the map_create_mode input value must correspond to the predefined map stub trigger type in NetBrain UI system. Otherwise, response "Some of the critical MapPath parameters are missing" will occur.|
+|###|###|  ***Note:*** The map_create_mode input value must correspond to the predefined map stub trigger type in NetBrain UI system. Otherwise, response "Some of the critical MapPath parameters are missing" will occur.|
 | map_setting.map_device_para | object | Device parameters for creating map |
 | map_setting.map_device_para.device* | string | Device name |
 | map_setting.map_device_para.include_neighbor | bool | Includes neighbor flag |
@@ -96,7 +96,7 @@ body = {
 
 |**Name**|**Type**|**Description**|
 |---|---|---|
-|mapId| string | ID of the map which users triggered from third party sofware.  |
+|mapId| string | ID of the map which users triggered from a third party sofware.  |
 |mapName| string | Name of the map. |
 |mapType| string | Create Map Mode.<br>0: Map Device and its Neighbors.<br>1: Open Site Map of the Device.<br>2: Open Existing Map.<br>3: Map a Path.<br>4: Create an Empty Map.  |
 |mapUrl| string | The URL link of the map triggered by users.  |
