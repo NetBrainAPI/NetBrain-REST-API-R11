@@ -2,7 +2,7 @@
 # Return the devices path results
 
 
-During current use case, the final goal is present the path result between two specified devices in current domain. There are totally 8 REST APIs we are going to concern to be a part of this use case, as shown in following:
+During current use case, the final goal is to present the path result between two specified devices in current domain. There are a total of 8 REST APIs used in this use case, as shown in following:
 
 1. Import python modules and global variables for sample code.
 2. Call login API to get authentication token.
@@ -20,32 +20,32 @@ The sequencial of provided APIs is also the sequence of our workflow steps.
 
 ## Step Explanation
 ***1. Import python modules and global variables for sample code.***<br>
-> Note: If users try to use this code. please remember to change the "nb_url" to users' own working url.
+> Note: If users try to use this code, please remember to change "nb_url" to users' own working url, along with its following information such as username, password, etc.
 
 ***2. Call login API to get authentication token.***<br>
->Same with use case 2, we calling the login API with "username" and "password" as inputs in the first step. As response we can get the authentication token as one fixed input in following APIs calling. If users get errors when calling this API please check the API documentation on [Github_login](https://github.com/NetBrainAPI/NetBrain-REST-API-R10.1/blob/10.1.2/REST%20APIs%20Documentation/Authentication%20and%20Authorization/Login%20API.md).
+>Same with use case 2, we call the login API with "username" and "password" as inputs in the first step. We receive the authentication token from the response, as one fixed input in following APIs calling. If users get errors when calling this API, please check the API documentation on [Github_login](https://github.com/NetBrainAPI/NetBrain-REST-API-R10.1/blob/10.1.2/REST%20APIs%20Documentation/Authentication%20and%20Authorization/Login%20API.md).
 
 ***3. call get_all_accessible_tenants API***
->After we got the token from previous section, we need to use this token as a key to find all tenants which we have the access authentication. During this step, the most important feature is to get the tenant id of the corresponding tenant which we decide to work inside. After running this API successfully, we will get the tenantId of the willing tenant which will be set as another input for next step API calling. If users want to get more details about this API or get errors when calling this API please check the API documentation on [Github_tenant](https://github.com/NetBrainAPI/NetBrain-REST-API-R10.1/blob/10.1.2/REST%20APIs%20Documentation/Tenants%20and%20Domains%20Management/Get%20All%20Accessible%20Tenants%20API.md) 
+>After we get the token from the previous section, we need to use this token as a key to find all tenants which we have the access authentication. During this step, the most important feature is to get the tenant id of the corresponding tenant which we decide to work in. After running this API successfully, we will get the tenantId of the willing tenant which will be set as another input for next step API calling. If users want to get more details about this API or get errors when calling this API, please check the API documentation on [Github_tenant](https://github.com/NetBrainAPI/NetBrain-REST-API-R10.1/blob/10.1.2/REST%20APIs%20Documentation/Tenants%20and%20Domains%20Management/Get%20All%20Accessible%20Tenants%20API.md) 
 
 ***4. call get_all_accessible_domains API.***
->In this section, we are going to find all accessible domains in the corressponding tenant which we have got the tenantId from previous step. Similar with step 2, during current API call, we have to decide which domain we are going to work inside and get the domainId at meanwhile to prepare for next API calling. If users get errors when calling this API please check the API documentation on [Github_domain](https://github.com/NetBrainAPI/NetBrain-REST-API-R10.1/blob/10.1.2/REST%20APIs%20Documentation/Tenants%20and%20Domains%20Management/Get%20All%20Accessible%20Domains%20API.md) 
+>In this section, we are going to find all accessible domains in the corresponding tenant with the tenantId from the previous step. Similar to step 2, during the current API call, we need to decide which domain we'd like to work in, and get the domainId meanwhile to prepare for the next API calling. If users get errors when calling this API, please check the API documentation on [Github_domain](https://github.com/NetBrainAPI/NetBrain-REST-API-R10.1/blob/10.1.2/REST%20APIs%20Documentation/Tenants%20and%20Domains%20Management/Get%20All%20Accessible%20Domains%20API.md) 
 
 ***5. call specify_a_working_domain API.***<br>
->After we running this step successfully, we directly complete the full login processes which means we totally join in Netbrain System by calling APIs(because we have record our tenantId and domainId，if users don't know the ID of corresponding tenant and domain please fully follow step 1 to step 4 in use case 1). Next step, we will start to use Netbrain functions formally. If users want to get more details about this API or get errors when calling this API please check the API documentation on [Github_working_domain](https://github.com/NetBrainAPI/NetBrain-REST-API-R10.1/blob/10.1.2/REST%20APIs%20Documentation/Authentication%20and%20Authorization/Specify%20A%20Working%20Domain%20API.md).
+>After running this step successfully, the full login processes is complete; this means we have joined the Netbrain System by calling APIs (Because we have recorded our tenantId and domainId, if users don't know the ID of corresponding tenant and domain, please fully follow step 1 ~ step 4 in use case 1). As the next step, we will start to use Netbrain functions formally. If users want to get more details about this API or get errors when calling this API, please check the API documentation on [Github_working_domain](https://github.com/NetBrainAPI/NetBrain-REST-API-R10.1/blob/10.1.2/REST%20APIs%20Documentation/Authentication%20and%20Authorization/Specify%20A%20Working%20Domain%20API.md).
 
 ***6. call resolve_device_gateway API***
->Becasue we have specified the hostname of source device and destination device at beginning, we can calling resolve devices gateway API at here. Mention again, if users want to get path result by calling APIs then users must follow the sequencial of Step 2. In current section, we will input the Ips list we have got from previous section. After the API running successfully, we will get a gateway list with some device informations which is the required input for next section. If users want to get more details about this API or get errors when calling this API please check the API documentation on [Github_Gateway](https://github.com/NetBrainAPI/NetBrain-REST-API-R10.1/blob/10.1.2/REST%20APIs%20Documentation/Path%20Management/Resolve%20Device%20Gateway%20API.md)
+>Since we have specified the hostname of source device and destination device in the beginning, we can call resolve devices gateway API here. To re-iterate, if users want to get path result by calling APIs, then users must follow step 2 sequentially. In this section, we will input the Ips list we got from previous section. After the API runs successfully, we will get a gateway list with some device information which will be required as the input for the next section. If users want to get more details about this API or get errors when calling this API, please check the API documentation on [Github_Gateway](https://github.com/NetBrainAPI/NetBrain-REST-API-R10.1/blob/10.1.2/REST%20APIs%20Documentation/Path%20Management/Resolve%20Device%20Gateway%20API.md)
 
 ***7. call calculate_path API***
->During this section, we are going to calling the Calculate Path API and set the gateway information list as one input(other inputs are shown in following code cell). When calling this API, users must input the required parameters correctly and follow the format of each inputs examples([Github_calPath](https://github.com/NetBrainAPI/NetBrain-REST-API-R10.1/blob/10.1.2/REST%20APIs%20Documentation/Path%20Management/Path%20Calculation%20API.md)). After calling this API successfully, we will get the corresponding taskId of gateway information which has been put in. And the taskId is the only one required input for next section. If users want to get more details about this API or get errors when calling this API please check the API documentation on [Github_calPath](https://github.com/NetBrainAPI/NetBrain-REST-API-R10.1/blob/10.1.2/REST%20APIs%20Documentation/Path%20Management/Calculate%20Path%20API.md).
+>In this section, we are going to call the Calculate Path API and set the gateway information list as a input (other inputs are shown in following code cell). When calling this API, users must input the required parameters correctly and follow the format of each inputs examples ([Github_calPath](https://github.com/NetBrainAPI/NetBrain-REST-API-R10.1/blob/10.1.2/REST%20APIs%20Documentation/Path%20Management/Path%20Calculation%20API.md)). After calling this API successfully, we will get the corresponding taskId of gateway information which has been put in. And the taskId is the only required input for next section. If users want to get more details about this API or get errors when calling this API, please check the API documentation on [Github_calPath](https://github.com/NetBrainAPI/NetBrain-REST-API-R10.1/blob/10.1.2/REST%20APIs%20Documentation/Path%20Management/Calculate%20Path%20API.md).
 
 ***8. call get_path_result API***
->So far we attemp to the final functional step of this use case: to get the calculation result of the task which we have got the taskId in section 2c. After we running the following sample code successfully, we will finally get the path result in a json file. If users want to get more details about this API or get errors when calling this API please check the API documentation on [Github_pathResult](https://github.com/NetBrainAPI/NetBrain-REST-API-R10.1/blob/10.1.2/REST%20APIs%20Documentation/Path%20Management/Get%20Path%20Calculation%20Result%20API.md). 
+>Now, we attempt to the final functional step of this use case: to get the calculation result of the task with taskId in section 2c. After running the following sample code successfully, we will finally get the path result in a json file. If users want to get more details about this API or get errors when calling this API, please check the API documentation on [Github_pathResult](https://github.com/NetBrainAPI/NetBrain-REST-API-R10.1/blob/10.1.2/REST%20APIs%20Documentation/Path%20Management/Get%20Path%20Calculation%20Result%20API.md). 
 
 ***9. call logout API***
->After we got all informations from this case, we have to logout from the Netbrain System.
-If users want to get more details about this API or get errors when calling this API please check the API documentation on [Github_logout](https://github.com/NetBrainAPI/NetBrain-REST-API-R10.1/blob/10.1.2/REST%20APIs%20Documentation/Authentication%20and%20Authorization/Logout%20API.md). 
+>After we get all informations from this case, we have to logout from the Netbrain System.
+If users want to get more details about this API or get errors when calling this API, please check the API documentation on [Github_logout](https://github.com/NetBrainAPI/NetBrain-REST-API-R10.1/blob/10.1.2/REST%20APIs%20Documentation/Authentication%20and%20Authorization/Logout%20API.md). 
 
 ## Sample Code
 
@@ -162,6 +162,8 @@ def resolve_device_gateway(token, ipOrHost, headers):
     data = {"ipOrHost":ipOrHost}
     try:
         response = requests.get(Resolve_Device_Gateway_url, params = data, headers = headers, verify = False)
+        result = response.json()
+        code = result["statusCode"]
         if response.status_code == 200:
             result = response.json()
             return (result)
@@ -170,39 +172,54 @@ def resolve_device_gateway(token, ipOrHost, headers):
 
     except Exception as e:
         print (str(e))
-        
+
 # call calculate path API
-def calculate_path(source_gateway, headers, token):
+def calculate_path(headers, token, source_device, destination_device, source_port=None, destination_port=0, protocol=4, is_live = True):
+    '''
+    Args:
+        source_port & destination_port - None or 8080, default: None
+    '''
+
     Calculate_Path_url = nb_url + "/ServicesAPI/API/V1/CMDB/Path/Calculation"
     headers["Token"] = token
     
-    gwName = source_gateway["gatewayName"]
-    gwType = source_gateway["type"]
-    gw = source_gateway["payload"]
-
-    sourceIP = source_device
-    sourcePort = None #can be 8080
-    destIP = destination_device
-    destPort = 0
-    pathAnalysisSet = 2
-    protocol = 4
-    isLive = True
-
-    body = {
-        "sourceIP" : sourceIP,                # IP address of the source device.
-        "sourcePort" : sourcePort,
+    source_gateway = resolve_device_gateway(token, source_device, headers)
+    
+    if not '790200' in source_gateway:
+        print('Gateway not found')
+        body = {
+        "sourceIP" : source_device,                # IP address of the source device.
+        "sourcePort" : source_port,
+        "sourceGateway" : {},    
+        "destIP" : destination_device,                    # IP address of the destination device.
+        "destPort" : destination_port,
+        "protocol" : protocol,                # Specify the application protocol, check online help, such as 4 for IPv4.
+        "isLive" : is_live                     # False: Current Baseline; True: Live access
+    }
+    else:
+        gateway = source_gateway["gatewayList"][0]
+        print ("Detail information of the first gateway in source device: ")
+        pprint.pprint(gateway)
+        print("")
+        
+        gwName = source_gateway["gatewayName"]
+        gwType = source_gateway["type"]
+        gw = source_gateway["payload"]
+        
+        body = {
+        "sourceIP" : source_device,                # IP address of the source device.
+        "sourcePort" : source_port,
         "sourceGateway" : {
             "type" : gwType,
             "gatewayName" : gwName,
             "payload" : gw
         },    
-        "destIP" : destIP,                    # IP address of the destination device.
-        "destPort" : destPort,
+        "destIP" : destination_device,                    # IP address of the destination device.
+        "destPort" : destination_port,
         "protocol" : protocol,                # Specify the application protocol, check online help, such as 4 for IPv4.
-        "isLive" : isLive                     # False: Current Baseline; True: Live access
+        "isLive" : is_live                     # False: Current Baseline; True: Live access
     } 
-    
-    
+
     try:
         response = requests.post(Calculate_Path_url, data = json.dumps(body), headers = headers, verify = False)
         if response.status_code == 200:
@@ -232,9 +249,6 @@ def get_path_result(taskID, headers, token):
     except Exception as e:
         return (str(e)) 
 
-        
-        
-        
 # call logout API
 def logout(nb_url, token, headers):
     Logout_url = nb_url + "/ServicesAPI/API/V1/Session"
@@ -291,17 +305,9 @@ def main(nb_url, headers, TenantName, DomainName, username, password, source_dev
     print ("Domain ID of Specified Working Domain : " + res)
     print("")
     
-    # Calling resolve device gateway API
-    print("Calling resolve device gateway API---------------------------------------------------------------------------------------")
-    res =  resolve_device_gateway(token, source_device, headers)
-    gateway = res["gatewayList"][0]
-    print ("Detail information of the first gateway in source device: ")
-    pprint.pprint(gateway)
-    print("")
-    
-    # Calling resolve device gateway API
+    # Calling calculate path API
     print("Calling calculate path API---------------------------------------------------------------------------------------")
-    task =  calculate_path(gateway, headers, token)
+    task =  calculate_path(headers, token, source_device, destination_device)
     print ("Response of the calculate path API : ")
     pprint.pprint(task)
     print("")
