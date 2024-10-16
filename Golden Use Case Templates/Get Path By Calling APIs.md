@@ -68,12 +68,15 @@ TenantName = "tenant name"
 DomainName = "domain name"
 username = "user name"
 password = "password"
-source_device = "172.24.30.1"
-destination_device = "172.24.101.2"
+source_device = "10.8.30.173"
+destination_device = "10.8.1.51"
+source_port = None
+destination_port = None
+protocol = 4
+is_live = False
 ```
 
 ### Define calling Functions
-
 
 
 ```python
@@ -163,9 +166,7 @@ def resolve_device_gateway(token, ipOrHost, headers):
     try:
         response = requests.get(Resolve_Device_Gateway_url, params = data, headers = headers, verify = False)
         result = response.json()
-        code = result["statusCode"]
         if response.status_code == 200:
-            result = response.json()
             return (result)
         else:
             return ("Create module attribute failed! - " + str(response.text))
@@ -174,52 +175,30 @@ def resolve_device_gateway(token, ipOrHost, headers):
         print (str(e))
 
 # call calculate path API
-def calculate_path(headers, token, source_device, destination_device, source_port=None, destination_port=0, protocol=4, is_live = True):
+def calculate_path(headers, token, source_device, destination_device, source_port=None, destination_port=None, protocol=4, is_live=False):
     '''
     Args:
         source_port & destination_port - None or 8080, default: None
+        protocol - 4 # IP
     '''
-
+    
     Calculate_Path_url = nb_url + "/ServicesAPI/API/V1/CMDB/Path/Calculation"
     headers["Token"] = token
-    
+
     source_gateway = resolve_device_gateway(token, source_device, headers)
-    
-    if not '790200' in source_gateway:
-        print('Gateway not found')
-        body = {
+    gateway = source_gateway["gatewayList"]
+    print ("Detail information of the first gateway in source device: ")
+    pprint.pprint(gateway)
+    print("")
+    body = {
         "sourceIP" : source_device,                # IP address of the source device.
         "sourcePort" : source_port,
-        "sourceGateway" : {},    
-        "destIP" : destination_device,                    # IP address of the destination device.
-        "destPort" : destination_port,
-        "protocol" : protocol,                # Specify the application protocol, check online help, such as 4 for IPv4.
-        "isLive" : is_live                     # False: Current Baseline; True: Live access
-    }
-    else:
-        gateway = source_gateway["gatewayList"][0]
-        print ("Detail information of the first gateway in source device: ")
-        pprint.pprint(gateway)
-        print("")
-        
-        gwName = source_gateway["gatewayName"]
-        gwType = source_gateway["type"]
-        gw = source_gateway["payload"]
-        
-        body = {
-        "sourceIP" : source_device,                # IP address of the source device.
-        "sourcePort" : source_port,
-        "sourceGateway" : {
-            "type" : gwType,
-            "gatewayName" : gwName,
-            "payload" : gw
-        },    
+        "sourceGateway" : gateway[0] if gateway else {},    
         "destIP" : destination_device,                    # IP address of the destination device.
         "destPort" : destination_port,
         "protocol" : protocol,                # Specify the application protocol, check online help, such as 4 for IPv4.
         "isLive" : is_live                     # False: Current Baseline; True: Live access
     } 
-
     try:
         response = requests.post(Calculate_Path_url, data = json.dumps(body), headers = headers, verify = False)
         if response.status_code == 200:
@@ -231,24 +210,41 @@ def calculate_path(headers, token, source_device, destination_device, source_por
     except Exception as e:
         return (str(e)) 
 
+# Check Path running status.
+def get_path_status(taskID, headers, token):
+    status_url = nb_url + "/ServicesAPI/API/V1/CMDB/Path/Calculation/" + str(taskID) + "/Status"
+    headers["Token"] = token
+    try:
+        response = requests.get(status_url, headers = headers, verify = False)
+        result = response.json()
+        return result
+
+    except Exception as e:
+        return False
+        
 # call get path calculation overview API.
 def get_path_result(taskID, headers, token):
     Get_Path_Calulation_Result_url = nb_url + "/ServicesAPI/API/V1/CMDB/Path/Calculation/" + str(taskID) + "/OverView"
     headers["Token"] = token
     try:
+        running_status = 0
+        while running_status < 2:
+            print('Path is still running, wait for 5 seconds')
+            time.sleep(5)
+            status = get_path_status(taskID, headers, token)
+            running_status = status['result']['resultCode'] 
+
         response = requests.get(Get_Path_Calulation_Result_url, headers = headers, verify = False)
         result = response.json()
-        code = result["statusCode"]
-        print(".")
-        if code != 790200:
-            time.sleep(5)
-            return get_path_result(taskID, headers, token)
+        if not result or not result.get('path_overview'):
+            print(f'Failed to get path result for task ID:{taskID}')
         else:
             return (result["path_overview"])
 
     except Exception as e:
         return (str(e)) 
-
+        
+        
 # call logout API
 def logout(nb_url, token, headers):
     Logout_url = nb_url + "/ServicesAPI/API/V1/Session"
@@ -267,14 +263,13 @@ def logout(nb_url, token, headers):
 
     except Exception as e:
         return (str(e))
-
 ```
 
 ### Define main function
 
 
 ```python
-def main(nb_url, headers, TenantName, DomainName, username, password, source_device_Ip, destination_device_Ip):
+def main(nb_url, headers, TenantName, DomainName, username, password, source_device, destination_device, source_port, destination_port, protocol, is_live):
     # Calling login API
     print("Calling login API---------------------------------------------------------------------------------------")
     result = login(nb_url, username, password, headers)
@@ -307,7 +302,7 @@ def main(nb_url, headers, TenantName, DomainName, username, password, source_dev
     
     # Calling calculate path API
     print("Calling calculate path API---------------------------------------------------------------------------------------")
-    task =  calculate_path(headers, token, source_device, destination_device)
+    task =  calculate_path(headers, token, source_device, destination_device, source_port=source_port, destination_port=destination_port, protocol=protocol, is_live=is_live)
     print ("Response of the calculate path API : ")
     pprint.pprint(task)
     print("")
@@ -327,417 +322,288 @@ def main(nb_url, headers, TenantName, DomainName, username, password, source_dev
     Logout = logout(nb_url, token, headers)
     print(Logout)
 
-main(nb_url, headers, TenantName, DomainName, username, password, source_device, destination_device)
+if __name__ == "__main__":
+    main(nb_url, headers, TenantName, DomainName, username, password, source_device, destination_device, source_port, destination_port, protocol, is_live)
+
+
 ```
+
+### Sample Output
 
     Calling login API---------------------------------------------------------------------------------------
-    {'token': '2289e3fa-a64d-46bd-b150-a537f1437ef9', 'statusCode': 790200, 'statusDescription': 'Success.'}
-    2289e3fa-a64d-46bd-b150-a537f1437ef9
-    
+    {'token': 'f149791a-567e-4f6a-8b5c-5dcd4d0e8945', 'statusCode': 790200, 'statusDescription': 'Success.'}
+    f149791a-567e-4f6a-8b5c-5dcd4d0e8945
+
     Calling get accessible tenant API---------------------------------------------------------------------------------------
-    Tenant ID : 823e096b-093a-10f1-1471-21a9a5ff509c
-    
+    Tenant ID : b78ac352-2b66-c0bc-ea00-6e6a62dafd5b
+
     Calling get accessible domain API---------------------------------------------------------------------------------------
-    Domain ID : af4581fd-a705-4ddf-a878-fd4c6f304b96
-    
+    Domain ID : 3e61418c-fee4-43b6-9863-95c383110035
+
     Calling specify domain API---------------------------------------------------------------------------------------
-    Domain ID of Specified Working Domain : af4581fd-a705-4ddf-a878-fd4c6f304b96
-    
-    Calling resolve device gateway API---------------------------------------------------------------------------------------
-    Detail information of the first gateway in source device: 
-    {'gatewayName': 'GW2Lab.GigabitEthernet0/1(172.24.30.1)',
-     'payload': '{"ip": "172.24.30.1", "endPointInfo": {"deviceId": '
-                '"100f18a9-ab16-499f-8ef4-e5ebce425319", "interfaceId": '
-                '"2eac71ff-5743-4a39-ab3b-b0771ac7d356"}, "device": "GW2Lab", '
-                '"deviceId": "100f18a9-ab16-499f-8ef4-e5ebce425319", "interface": '
-                '"GigabitEthernet0/1", "interfaceId": '
-                '"2eac71ff-5743-4a39-ab3b-b0771ac7d356", "prefixLen": 30}',
-     'type': 'Device Interface'}
-    
+    Domain ID of Specified Working Domain : 3e61418c-fee4-43b6-9863-95c383110035
+
     Calling calculate path API---------------------------------------------------------------------------------------
+    Detail information of the first gateway in source device: 
+    [{'gatewayName': 'CA-TOR-SW1.Vlan302(10.8.30.1)',
+    'isCutomized': False,
+    'natInfo': [],
+    'payload': '{"ip": "10.8.30.1", "endPointInfo": null, "device": '
+                '"CA-TOR-SW1", "deviceId": '
+                '"4dd0145c-ff8d-4d8f-b33b-a204fb8ca616", "interface": "Vlan302", '
+                '"interfaceId": "690489c2-2c26-4380-b48f-00654201abf8", '
+                '"prefixLen": 24, "details": [{"device": "CA-TOR-SW1", '
+                '"deviceId": "4dd0145c-ff8d-4d8f-b33b-a204fb8ca616", "interface": '
+                '"Vlan302", "interfaceId": '
+                '"690489c2-2c26-4380-b48f-00654201abf8"}]}',
+    'type': 'Device Interface'},
+    {'gatewayName': 'CA-TOR-SW1.Vlan302(10.8.30.1)',
+    'isCutomized': False,
+    'natInfo': [],
+    'payload': '{"ip": "10.8.30.1", "endPointInfo": null, "device": '
+                '"CA-TOR-SW1", "deviceId": '
+                '"4dd0145c-ff8d-4d8f-b33b-a204fb8ca616", "interface": "Vlan302", '
+                '"interfaceId": "690489c2-2c26-4380-b48f-00654201abf8", '
+                '"prefixLen": 24, "details": [{"device": "CA-TOR-SW1", '
+                '"deviceId": "4dd0145c-ff8d-4d8f-b33b-a204fb8ca616", "interface": '
+                '"Vlan302", "interfaceId": '
+                '"690489c2-2c26-4380-b48f-00654201abf8"}], "Original Type": '
+                '"Device Interface"}',
+    'type': 'Multicast'}]
+
     Response of the calculate path API : 
     {'statusCode': 790200,
-     'statusDescription': 'Success.',
-     'taskID': '075e35b0-71d1-490f-834d-7393a3291e08'}
-    
+    'statusDescription': 'Success.',
+    'taskID': '4ed3ba9f-1927-4c57-ae95-d2c780f68322'}
+
     Calling get path calculation overview API---------------------------------------------------------------------------------------
     ########################################################################################################
-    .
-    .
-    .
-    .
-    .
-    .
-    .
-    .
-    .
-    .
-    .
-    .
-    .
-    .
+    Path is still running, wait for 5 seconds
     Detail information of path hops: 
     [{'failure_reasons': [],
-      'path_list': [{'branch_list': [{'failure_reason': '',
-                                      'hop_detail_list': [{'fromDev': {'devId': '100f18a9-ab16-499f-8ef4-e5ebce425319',
-                                                                       'devName': 'GW2Lab',
-                                                                       'devType': 2,
-                                                                       'domainId': ''},
-                                                           'fromIntf': {'PhysicalInftName': 'GigabitEthernet0/1',
-                                                                        'intfDisplaySchemaObj': {'schema': 'ipIntfs.name',
-                                                                                                 'value': 'GigabitEthernet0/1 '
-                                                                                                          '172.24.30.1/30'},
-                                                                        'intfKeyObj': {'schema': 'ipIntfs._id',
-                                                                                       'value': 'ec46fc9c-2bcf-4478-87c8-7abb41aede37'}},
-                                                           'hopId': 'ed6b580c-48da-4772-993f-0fc5493811b3',
-                                                           'isComplete': False,
-                                                           'isP2P': False,
-                                                           'mediaId': '51935453-4630-403b-acbf-e3debaa30082',
-                                                           'mediaInfo': {'mediaName': '172.24.30.0/30',
-                                                                         'mediaType': 'Lan',
-                                                                         'neat': True,
-                                                                         'topoType': 'L3_Topo_Type'},
-                                                           'parentHopId': '',
-                                                           'preHopId': '00000000-0000-0000-0000-000000000000',
-                                                           'sequnce': 0,
-                                                           'toDev': {'devId': '09f62415-44a2-45d5-9039-150c14936b2e',
-                                                                     'devName': 'NY_Router',
-                                                                     'devType': 2,
-                                                                     'domainId': ''},
-                                                           'toIntf': {'PhysicalInftName': 'FastEthernet0/0',
-                                                                      'intfDisplaySchemaObj': {'schema': 'ipIntfs.name',
-                                                                                               'value': 'FastEthernet0/0 '
-                                                                                                        '172.24.30.2/30'},
-                                                                      'intfKeyObj': {'schema': 'ipIntfs._id',
-                                                                                     'value': '8f195d7d-3b65-4757-878a-1cdfd223d119'}},
-                                                           'topoType': 'L3_Topo_Type',
-                                                           'trafficState': {'acl': '',
+    'path_list': [{'branch_list': [{'category': 'Lack of related information',
+                                    'error_code': 412,
+                                    'failure_reason': 'No matching entries were '
+                                                        'found for destination IP '
+                                                        '10.8.1.51 in the VRT',
+                                    'hop_detail_list': [{'fromDev': {'devId': '00000000-0000-0000-0000-000168304301',
+                                                                    'devName': '10.8.30.173',
+                                                                    'devType': 1036,
+                                                                    'domainId': ''},
+                                                        'fromIntf': {'PhysicalInftName': '',
+                                                                        'intfDisplaySchemaObj': {'schema': '',
+                                                                                                'value': ''},
+                                                                        'intfKeyObj': {'schema': '',
+                                                                                    'value': ''},
+                                                                        'ipLoc': ''},
+                                                        'hopId': '836652e5-a1f1-4b77-b564-c20921f13ab1',
+                                                        'isComplete': False,
+                                                        'isGateway': False,
+                                                        'isP2P': False,
+                                                        'mediaId': '1f41649c-c2c0-448b-92e0-801fd88a400a',
+                                                        'mediaInfo': {'mediaName': '10.78.16.128/29',
+                                                                        'mediaType': 'Lan',
+                                                                        'neat': True,
+                                                                        'topoType': 'L3_Topo_Type'},
+                                                        'parentHopId': '',
+                                                        'preHopId': '00000000-0000-0000-0000-000000000000',
+                                                        'sequnce': 0,
+                                                        'techs': [],
+                                                        'toDev': {'devId': '225c5da9-96bd-4bde-9409-11d440c7f30d',
+                                                                    'devName': 'FW01-VNDR-TTEC-AUS-TX-US/act',
+                                                                    'devType': 2009,
+                                                                    'domainId': ''},
+                                                        'toIntf': {'PhysicalInftName': 'inside',
+                                                                    'intfDisplaySchemaObj': {'schema': 'ipIntfs.name',
+                                                                                            'value': 'inside '
+                                                                                                        '10.78.16.129/29'},
+                                                                    'intfKeyObj': {'schema': 'ipIntfs._id',
+                                                                                    'value': '16556a6b-d687-4a06-8039-9ebb55546937'},
+                                                                    'ipLoc': '10.78.16.129/29'},
+                                                        'topoType': 'L3_Topo_Type',
+                                                        'trafficState': {'acl': '',
                                                                             'alg': -1,
-                                                                            'dev_name': 'GW2Lab',
+                                                                            'dev_name': '10.8.30.173',
+                                                                            'dev_type': 1036,
+                                                                            'in_intf': '',
+                                                                            'in_intf_schema': '',
+                                                                            'in_intf_topo_type': '',
+                                                                            'next_dev_in_intf': 'inside '
+                                                                                                '10.78.16.129/29',
+                                                                            'next_dev_in_intf_schema': 'ipIntfs',
+                                                                            'next_dev_in_intf_topo_type': 'L3_Topo_Type',
+                                                                            'next_dev_name': 'FW01-VNDR-TTEC-AUS-TX-US/act',
+                                                                            'next_dev_type': 2009,
+                                                                            'next_hop_ip': '10.78.16.129',
+                                                                            'next_hop_mac': '',
+                                                                            'out_intf': '',
+                                                                            'out_intf_schema': '',
+                                                                            'out_intf_topo_type': '',
+                                                                            'pbr': '',
+                                                                            'vrf': ''}},
+                                                        {'fromDev': {'devId': '225c5da9-96bd-4bde-9409-11d440c7f30d',
+                                                                    'devName': 'FW01-VNDR-TTEC-AUS-TX-US/act',
+                                                                    'devType': 2009,
+                                                                    'domainId': ''},
+                                                        'fromIntf': {'PhysicalInftName': 'inside',
+                                                                        'intfDisplaySchemaObj': {'schema': 'intfs.name',
+                                                                                                'value': 'inside'},
+                                                                        'intfKeyObj': {'schema': 'intfs._id',
+                                                                                    'value': '65724b18-2d89-486f-9c42-3e736f5992f6'},
+                                                                        'ipLoc': ''},
+                                                        'hopId': '21cde94f-8dea-4281-a2cc-f8bf8d6b4ae1',
+                                                        'isComplete': False,
+                                                        'isGateway': False,
+                                                        'isP2P': False,
+                                                        'mediaId': '',
+                                                        'mediaInfo': {'mediaName': '',
+                                                                        'mediaType': '',
+                                                                        'neat': False,
+                                                                        'topoType': ''},
+                                                        'parentHopId': '',
+                                                        'preHopId': '836652e5-a1f1-4b77-b564-c20921f13ab1',
+                                                        'sequnce': 1,
+                                                        'techs': ['In_ACL'],
+                                                        'toDev': {'devId': '5447f244-bf92-4d6d-b86f-050488dfe72c',
+                                                                    'devName': 'RT01-VNDR-TTEC-AUS-TX-US.citfg.com',
+                                                                    'devType': 2,
+                                                                    'domainId': ''},
+                                                        'toIntf': {'PhysicalInftName': 'TenGigabitEthernet0/1/0.100',
+                                                                    'intfDisplaySchemaObj': {'schema': 'intfs.name',
+                                                                                            'value': 'TenGigabitEthernet0/1/0.100'},
+                                                                    'intfKeyObj': {'schema': 'intfs._id',
+                                                                                    'value': 'a8c9ae3e-7e62-496a-8440-5065c4386553'},
+                                                                    'ipLoc': ''},
+                                                        'topoType': 'L3_Topo_Type',
+                                                        'trafficState': {'acl': 'ACL '
+                                                                                'outbound '
+                                                                                'on '
+                                                                                'device '
+                                                                                'FW01-VNDR-TTEC-AUS-TX-US/act',
+                                                                            'alg': -1,
+                                                                            'dev_name': 'FW01-VNDR-TTEC-AUS-TX-US/act',
+                                                                            'dev_type': 2009,
+                                                                            'in_intf': 'inside '
+                                                                                    '10.78.16.129/29',
+                                                                            'in_intf_schema': 'ipIntfs',
+                                                                            'in_intf_topo_type': 'L3_Topo_Type',
+                                                                            'next_dev_in_intf': 'TenGigabitEthernet0/1/0.100',
+                                                                            'next_dev_in_intf_schema': 'intfs',
+                                                                            'next_dev_in_intf_topo_type': 'L3_Topo_Type',
+                                                                            'next_dev_name': 'RT01-VNDR-TTEC-AUS-TX-US.citfg.com',
+                                                                            'next_dev_type': 2,
+                                                                            'next_hop_ip': '10.78.16.132',
+                                                                            'next_hop_mac': '',
+                                                                            'out_intf': 'inside',
+                                                                            'out_intf_schema': 'intfs',
+                                                                            'out_intf_topo_type': 'L3_Topo_Type',
+                                                                            'pbr': '',
+                                                                            'vrf': ''}},
+                                                        {'fromDev': {'devId': '5447f244-bf92-4d6d-b86f-050488dfe72c',
+                                                                    'devName': 'RT01-VNDR-TTEC-AUS-TX-US.citfg.com',
+                                                                    'devType': 2,
+                                                                    'domainId': ''},
+                                                        'fromIntf': {'PhysicalInftName': 'TenGigabitEthernet0/1/1.2',
+                                                                        'intfDisplaySchemaObj': {'schema': 'ipIntfs.name',
+                                                                                                'value': 'TenGigabitEthernet0/1/1.2 '
+                                                                                                        '10.78.16.22/30'},
+                                                                        'intfKeyObj': {'schema': 'ipIntfs._id',
+                                                                                    'value': '0e88a165-c8c5-4704-b78e-3abde617bf03'},
+                                                                        'ipLoc': '10.78.16.22/30'},
+                                                        'hopId': '36d26a0e-e271-4c05-a236-88975a3408af',
+                                                        'isComplete': False,
+                                                        'isGateway': False,
+                                                        'isP2P': True,
+                                                        'mediaId': '',
+                                                        'mediaInfo': {'mediaName': '',
+                                                                        'mediaType': '',
+                                                                        'neat': False,
+                                                                        'topoType': ''},
+                                                        'parentHopId': '',
+                                                        'preHopId': '21cde94f-8dea-4281-a2cc-f8bf8d6b4ae1',
+                                                        'sequnce': 2,
+                                                        'techs': [],
+                                                        'toDev': {'devId': '043acc00-042b-2cf9-6521-ae6048b39a64',
+                                                                    'devName': 'MPLS '
+                                                                                '- '
+                                                                                'AT&T',
+                                                                    'devType': 1024,
+                                                                    'domainId': ''},
+                                                        'toIntf': {'PhysicalInftName': 'TenGigabitEthernet0/1/1.2-10.78.16.21',
+                                                                    'intfDisplaySchemaObj': {'schema': 'ipIntfs.name',
+                                                                                            'value': 'TenGigabitEthernet0/1/1.2-10.78.16.21 '
+                                                                                                        '10.78.16.21/30'},
+                                                                    'intfKeyObj': {'schema': 'ipIntfs._id',
+                                                                                    'value': 'd1e74a9e-c10f-4a9e-a6b7-0c55a2ec1ff8'},
+                                                                    'ipLoc': '10.78.16.21/30'},
+                                                        'topoType': 'L3_Topo_Type',
+                                                        'trafficState': {'acl': '',
+                                                                            'alg': -1,
+                                                                            'dev_name': 'RT01-VNDR-TTEC-AUS-TX-US.citfg.com',
                                                                             'dev_type': 2,
-                                                                            'in_intf': 'GigabitEthernet0/1',
+                                                                            'in_intf': 'TenGigabitEthernet0/1/0.100',
                                                                             'in_intf_schema': 'intfs',
                                                                             'in_intf_topo_type': 'L3_Topo_Type',
-                                                                            'next_dev_in_intf': 'FastEthernet0/0 '
-                                                                                                '172.24.30.2/30',
+                                                                            'next_dev_in_intf': 'TenGigabitEthernet0/1/1.2-10.78.16.21 '
+                                                                                                '10.78.16.21/30',
                                                                             'next_dev_in_intf_schema': 'ipIntfs',
                                                                             'next_dev_in_intf_topo_type': 'L3_Topo_Type',
-                                                                            'next_dev_name': 'NY_Router',
-                                                                            'next_dev_type': 2,
-                                                                            'next_hop_ip': '172.24.30.2',
+                                                                            'next_dev_name': 'MPLS '
+                                                                                            '- '
+                                                                                            'AT&T',
+                                                                            'next_dev_type': 1024,
+                                                                            'next_hop_ip': '10.78.16.21',
                                                                             'next_hop_mac': '',
-                                                                            'out_intf': 'GigabitEthernet0/1 '
-                                                                                        '172.24.30.1/30',
+                                                                            'out_intf': 'TenGigabitEthernet0/1/1.2 '
+                                                                                        '10.78.16.22/30',
                                                                             'out_intf_schema': 'ipIntfs',
                                                                             'out_intf_topo_type': 'L3_Topo_Type',
                                                                             'pbr': '',
                                                                             'vrf': ''}},
-                                                          {'fromDev': {'devId': '09f62415-44a2-45d5-9039-150c14936b2e',
-                                                                       'devName': 'NY_Router',
-                                                                       'devType': 2,
-                                                                       'domainId': ''},
-                                                           'fromIntf': {'PhysicalInftName': 'Vlan100',
-                                                                        'intfDisplaySchemaObj': {'schema': 'ipIntfs.name',
-                                                                                                 'value': 'Vlan100 '
-                                                                                                          '172.24.30.5/30'},
-                                                                        'intfKeyObj': {'schema': 'ipIntfs._id',
-                                                                                       'value': '47e8e298-eb67-4bdc-968f-a940edb8262e'}},
-                                                           'hopId': '814661b8-3a34-4332-8082-4695e0af72ea',
-                                                           'isComplete': False,
-                                                           'isP2P': False,
-                                                           'mediaId': 'b0492071-04fc-4d12-940d-6ee0ec202f40',
-                                                           'mediaInfo': {'mediaName': '172.24.30.4/30',
-                                                                         'mediaType': 'Lan',
-                                                                         'neat': True,
-                                                                         'topoType': 'L3_Topo_Type'},
-                                                           'parentHopId': '',
-                                                           'preHopId': 'ed6b580c-48da-4772-993f-0fc5493811b3',
-                                                           'sequnce': 1,
-                                                           'toDev': {'devId': '066da03d-50ea-4fe8-b9a6-f41095c8dd4f',
-                                                                     'devName': 'NY_POPP',
-                                                                     'devType': 2,
-                                                                     'domainId': ''},
-                                                           'toIntf': {'PhysicalInftName': 'Ethernet0/1',
-                                                                      'intfDisplaySchemaObj': {'schema': 'ipIntfs.name',
-                                                                                               'value': 'Ethernet0/1 '
-                                                                                                        '172.24.30.6/30'},
-                                                                      'intfKeyObj': {'schema': 'ipIntfs._id',
-                                                                                     'value': '3797846c-3308-4d84-b26d-4a9f87cae50e'}},
-                                                           'topoType': 'L3_Topo_Type',
-                                                           'trafficState': {'acl': '',
-                                                                            'alg': -1,
-                                                                            'dev_name': 'NY_Router',
-                                                                            'dev_type': 2,
-                                                                            'in_intf': 'FastEthernet0/0 '
-                                                                                       '172.24.30.2/30',
-                                                                            'in_intf_schema': 'ipIntfs',
-                                                                            'in_intf_topo_type': 'L3_Topo_Type',
-                                                                            'next_dev_in_intf': 'Ethernet0/1 '
-                                                                                                '172.24.30.6/30',
-                                                                            'next_dev_in_intf_schema': 'ipIntfs',
-                                                                            'next_dev_in_intf_topo_type': 'L3_Topo_Type',
-                                                                            'next_dev_name': 'NY_POPP',
-                                                                            'next_dev_type': 2,
-                                                                            'next_hop_ip': '172.24.30.6',
-                                                                            'next_hop_mac': '',
-                                                                            'out_intf': 'Vlan100 '
-                                                                                        '172.24.30.5/30',
-                                                                            'out_intf_schema': 'ipIntfs',
-                                                                            'out_intf_topo_type': 'L3_Topo_Type',
-                                                                            'pbr': '',
-                                                                            'vrf': ''}},
-                                                          {'fromDev': {'devId': '066da03d-50ea-4fe8-b9a6-f41095c8dd4f',
-                                                                       'devName': 'NY_POPP',
-                                                                       'devType': 2,
-                                                                       'domainId': ''},
-                                                           'fromIntf': {'PhysicalInftName': 'Ethernet0/0',
-                                                                        'intfDisplaySchemaObj': {'schema': 'ipIntfs.name',
-                                                                                                 'value': 'Ethernet0/0 '
-                                                                                                          '172.24.31.65/26'},
-                                                                        'intfKeyObj': {'schema': 'ipIntfs._id',
-                                                                                       'value': '7404c730-6930-445c-a801-687c9c31e42c'}},
-                                                           'hopId': '0a3ce73b-ebf8-43c6-aa69-a7377e949a85',
-                                                           'isComplete': False,
-                                                           'isP2P': False,
-                                                           'mediaId': 'c555d2a2-5819-4276-ad53-dad4d870f407',
-                                                           'mediaInfo': {'mediaName': '172.24.31.64/26',
-                                                                         'mediaType': 'Lan',
-                                                                         'neat': False,
-                                                                         'topoType': 'L3_Topo_Type'},
-                                                           'parentHopId': '',
-                                                           'preHopId': '814661b8-3a34-4332-8082-4695e0af72ea',
-                                                           'sequnce': 2,
-                                                           'toDev': {'devId': 'fe2036f0-4cc3-469e-9df4-6479241392d5',
-                                                                     'devName': 'NY-core-bak',
-                                                                     'devType': 2,
-                                                                     'domainId': ''},
-                                                           'toIntf': {'PhysicalInftName': 'FastEthernet0/0',
-                                                                      'intfDisplaySchemaObj': {'schema': 'ipIntfs.name',
-                                                                                               'value': 'FastEthernet0/0 '
-                                                                                                        '172.24.31.125/26'},
-                                                                      'intfKeyObj': {'schema': 'ipIntfs._id',
-                                                                                     'value': '52ad6492-5b14-4c24-95f3-dc71cc24c619'}},
-                                                           'topoType': 'L3_Topo_Type',
-                                                           'trafficState': {'acl': '',
-                                                                            'alg': -1,
-                                                                            'dev_name': 'NY_POPP',
-                                                                            'dev_type': 2,
-                                                                            'in_intf': 'Ethernet0/1 '
-                                                                                       '172.24.30.6/30',
-                                                                            'in_intf_schema': 'ipIntfs',
-                                                                            'in_intf_topo_type': 'L3_Topo_Type',
-                                                                            'next_dev_in_intf': 'FastEthernet0/0 '
-                                                                                                '172.24.31.125/26',
-                                                                            'next_dev_in_intf_schema': 'ipIntfs',
-                                                                            'next_dev_in_intf_topo_type': 'L3_Topo_Type',
-                                                                            'next_dev_name': 'NY-core-bak',
-                                                                            'next_dev_type': 2,
-                                                                            'next_hop_ip': '172.24.31.125',
-                                                                            'next_hop_mac': '',
-                                                                            'out_intf': 'Ethernet0/0 '
-                                                                                        '172.24.31.65/26',
-                                                                            'out_intf_schema': 'ipIntfs',
-                                                                            'out_intf_topo_type': 'L3_Topo_Type',
-                                                                            'pbr': '',
-                                                                            'vrf': ''}},
-                                                          {'fromDev': {'devId': 'fe2036f0-4cc3-469e-9df4-6479241392d5',
-                                                                       'devName': 'NY-core-bak',
-                                                                       'devType': 2,
-                                                                       'domainId': ''},
-                                                           'fromIntf': {'PhysicalInftName': 'FastEthernet0/1.1',
-                                                                        'intfDisplaySchemaObj': {'schema': 'ipIntfs.name',
-                                                                                                 'value': 'FastEthernet0/1.1 '
-                                                                                                          '172.24.31.193/26'},
-                                                                        'intfKeyObj': {'schema': 'ipIntfs._id',
-                                                                                       'value': '5a94e073-8d9d-41f4-81a8-a64bcf1efbb7'}},
-                                                           'hopId': '0e142a83-4b4f-4c5e-b450-c275104628b5',
-                                                           'isComplete': False,
-                                                           'isP2P': False,
-                                                           'mediaId': '791b0426-2683-4c68-853c-822701f2474f',
-                                                           'mediaInfo': {'mediaName': '172.24.31.192/26',
-                                                                         'mediaType': 'Lan',
-                                                                         'neat': True,
-                                                                         'topoType': 'L3_Topo_Type'},
-                                                           'parentHopId': '',
-                                                           'preHopId': '0a3ce73b-ebf8-43c6-aa69-a7377e949a85',
-                                                           'sequnce': 3,
-                                                           'toDev': {'devId': '26e3e35d-4a4a-4fbd-9a40-17d65801b465',
-                                                                     'devName': 'BJ*POP',
-                                                                     'devType': 2,
-                                                                     'domainId': ''},
-                                                           'toIntf': {'PhysicalInftName': 'FastEthernet0/1',
-                                                                      'intfDisplaySchemaObj': {'schema': 'ipIntfs.name',
-                                                                                               'value': 'FastEthernet0/1 '
-                                                                                                        '172.24.31.195/26'},
-                                                                      'intfKeyObj': {'schema': 'ipIntfs._id',
-                                                                                     'value': '7bcaef5b-50b5-4594-96c7-7a8bab6267dc'}},
-                                                           'topoType': 'L3_Topo_Type',
-                                                           'trafficState': {'acl': '',
-                                                                            'alg': -1,
-                                                                            'dev_name': 'NY-core-bak',
-                                                                            'dev_type': 2,
-                                                                            'in_intf': 'FastEthernet0/0 '
-                                                                                       '172.24.31.125/26',
-                                                                            'in_intf_schema': 'ipIntfs',
-                                                                            'in_intf_topo_type': 'L3_Topo_Type',
-                                                                            'next_dev_in_intf': 'FastEthernet0/1 '
-                                                                                                '172.24.31.195/26',
-                                                                            'next_dev_in_intf_schema': 'ipIntfs',
-                                                                            'next_dev_in_intf_topo_type': 'L3_Topo_Type',
-                                                                            'next_dev_name': 'BJ*POP',
-                                                                            'next_dev_type': 2,
-                                                                            'next_hop_ip': '172.24.31.195',
-                                                                            'next_hop_mac': '',
-                                                                            'out_intf': 'FastEthernet0/1.1 '
-                                                                                        '172.24.31.193/26',
-                                                                            'out_intf_schema': 'ipIntfs',
-                                                                            'out_intf_topo_type': 'L3_Topo_Type',
-                                                                            'pbr': '',
-                                                                            'vrf': ''}},
-                                                          {'fromDev': {'devId': '26e3e35d-4a4a-4fbd-9a40-17d65801b465',
-                                                                       'devName': 'BJ*POP',
-                                                                       'devType': 2,
-                                                                       'domainId': ''},
-                                                           'fromIntf': {'PhysicalInftName': 'FastEthernet0/0',
-                                                                        'intfDisplaySchemaObj': {'schema': 'ipIntfs.name',
-                                                                                                 'value': 'FastEthernet0/0 '
-                                                                                                          '172.24.32.225/28'},
-                                                                        'intfKeyObj': {'schema': 'ipIntfs._id',
-                                                                                       'value': 'cd71ec6b-e6de-4c27-bf9a-b24e85604770'}},
-                                                           'hopId': '04b1aba4-d93b-4ef1-871e-26665c41ea91',
-                                                           'isComplete': False,
-                                                           'isP2P': False,
-                                                           'mediaId': '49f42014-4114-4427-8f78-fba8b3321597',
-                                                           'mediaInfo': {'mediaName': '172.24.32.224/28',
-                                                                         'mediaType': 'Lan',
-                                                                         'neat': True,
-                                                                         'topoType': 'L3_Topo_Type'},
-                                                           'parentHopId': '',
-                                                           'preHopId': '0e142a83-4b4f-4c5e-b450-c275104628b5',
-                                                           'sequnce': 4,
-                                                           'toDev': {'devId': '0c61fd0d-8dca-4b9e-80af-b000236e3c04',
-                                                                     'devName': 'BJ_core_3550',
-                                                                     'devType': 2001,
-                                                                     'domainId': ''},
-                                                           'toIntf': {'PhysicalInftName': 'FastEthernet0/1',
-                                                                      'intfDisplaySchemaObj': {'schema': 'ipIntfs.name',
-                                                                                               'value': 'FastEthernet0/1 '
-                                                                                                        '172.24.32.226/28'},
-                                                                      'intfKeyObj': {'schema': 'ipIntfs._id',
-                                                                                     'value': '10c98513-04e9-4b4f-bc2d-f23b36484b0d'}},
-                                                           'topoType': 'L3_Topo_Type',
-                                                           'trafficState': {'acl': '',
-                                                                            'alg': -1,
-                                                                            'dev_name': 'BJ*POP',
-                                                                            'dev_type': 2,
-                                                                            'in_intf': 'FastEthernet0/1 '
-                                                                                       '172.24.31.195/26',
-                                                                            'in_intf_schema': 'ipIntfs',
-                                                                            'in_intf_topo_type': 'L3_Topo_Type',
-                                                                            'next_dev_in_intf': 'FastEthernet0/1 '
-                                                                                                '172.24.32.226/28',
-                                                                            'next_dev_in_intf_schema': 'ipIntfs',
-                                                                            'next_dev_in_intf_topo_type': 'L3_Topo_Type',
-                                                                            'next_dev_name': 'BJ_core_3550',
-                                                                            'next_dev_type': 2001,
-                                                                            'next_hop_ip': '172.24.32.226',
-                                                                            'next_hop_mac': '',
-                                                                            'out_intf': 'FastEthernet0/0 '
-                                                                                        '172.24.32.225/28',
-                                                                            'out_intf_schema': 'ipIntfs',
-                                                                            'out_intf_topo_type': 'L3_Topo_Type',
-                                                                            'pbr': '',
-                                                                            'vrf': ''}},
-                                                          {'fromDev': {'devId': '0c61fd0d-8dca-4b9e-80af-b000236e3c04',
-                                                                       'devName': 'BJ_core_3550',
-                                                                       'devType': 2001,
-                                                                       'domainId': ''},
-                                                           'fromIntf': {'PhysicalInftName': 'Port-channel10',
-                                                                        'intfDisplaySchemaObj': {'schema': 'ipIntfs.name',
-                                                                                                 'value': 'Port-channel10 '
-                                                                                                          '172.24.100.1/30'},
-                                                                        'intfKeyObj': {'schema': 'ipIntfs._id',
-                                                                                       'value': 'eb22ea5d-dcf4-4803-b974-2d80819ff283'}},
-                                                           'hopId': '53ce2a5a-314e-4117-8431-b6975dc6b256',
-                                                           'isComplete': False,
-                                                           'isP2P': False,
-                                                           'mediaId': '45e325a1-a7cd-4152-a4dc-2ad64e780422',
-                                                           'mediaInfo': {'mediaName': '172.24.100.0/30',
-                                                                         'mediaType': 'Lan',
-                                                                         'neat': True,
-                                                                         'topoType': 'L3_Topo_Type'},
-                                                           'parentHopId': '',
-                                                           'preHopId': '04b1aba4-d93b-4ef1-871e-26665c41ea91',
-                                                           'sequnce': 5,
-                                                           'toDev': {'devId': '93a1010e-7339-4276-9fcb-0d24b11e7c56',
-                                                                     'devName': 'BJ-L2-Core-A',
-                                                                     'devType': 2001,
-                                                                     'domainId': ''},
-                                                           'toIntf': {'PhysicalInftName': 'Port-channel10',
-                                                                      'intfDisplaySchemaObj': {'schema': 'ipIntfs.name',
-                                                                                               'value': 'Port-channel10 '
-                                                                                                        '172.24.100.2/30'},
-                                                                      'intfKeyObj': {'schema': 'ipIntfs._id',
-                                                                                     'value': 'aac0d474-43c8-4d89-9d40-95730e83b73e'}},
-                                                           'topoType': 'L3_Topo_Type',
-                                                           'trafficState': {'acl': '',
-                                                                            'alg': -1,
-                                                                            'dev_name': 'BJ_core_3550',
-                                                                            'dev_type': 2001,
-                                                                            'in_intf': 'FastEthernet0/1 '
-                                                                                       '172.24.32.226/28',
-                                                                            'in_intf_schema': 'ipIntfs',
-                                                                            'in_intf_topo_type': 'L3_Topo_Type',
-                                                                            'next_dev_in_intf': 'Port-channel10 '
-                                                                                                '172.24.100.2/30',
-                                                                            'next_dev_in_intf_schema': 'ipIntfs',
-                                                                            'next_dev_in_intf_topo_type': 'L3_Topo_Type',
-                                                                            'next_dev_name': 'BJ-L2-Core-A',
-                                                                            'next_dev_type': 2001,
-                                                                            'next_hop_ip': '172.24.100.2',
-                                                                            'next_hop_mac': '',
-                                                                            'out_intf': 'Port-channel10 '
-                                                                                        '172.24.100.1/30',
-                                                                            'out_intf_schema': 'ipIntfs',
-                                                                            'out_intf_topo_type': 'L3_Topo_Type',
-                                                                            'pbr': '',
-                                                                            'vrf': ''}},
-                                                          {'fromDev': {'devId': '93a1010e-7339-4276-9fcb-0d24b11e7c56',
-                                                                       'devName': 'BJ-L2-Core-A',
-                                                                       'devType': 2001,
-                                                                       'domainId': ''},
-                                                           'fromIntf': {'PhysicalInftName': '',
+                                                        {'fromDev': {'devId': '043acc00-042b-2cf9-6521-ae6048b39a64',
+                                                                    'devName': 'MPLS '
+                                                                                '- '
+                                                                                'AT&T',
+                                                                    'devType': 1024,
+                                                                    'domainId': ''},
+                                                        'fromIntf': {'PhysicalInftName': '',
                                                                         'intfDisplaySchemaObj': {'schema': '',
-                                                                                                 'value': ''},
+                                                                                                'value': ''},
                                                                         'intfKeyObj': {'schema': '',
-                                                                                       'value': ''}},
-                                                           'hopId': '5008ad89-dcb8-4b8a-89c4-68cf5341e2ad',
-                                                           'isComplete': False,
-                                                           'isP2P': False,
-                                                           'mediaId': '',
-                                                           'mediaInfo': {'mediaName': '',
-                                                                         'mediaType': '',
-                                                                         'neat': False,
-                                                                         'topoType': ''},
-                                                           'parentHopId': '',
-                                                           'preHopId': '53ce2a5a-314e-4117-8431-b6975dc6b256',
-                                                           'sequnce': 6,
-                                                           'toDev': {'devId': '',
-                                                                     'devName': '',
-                                                                     'devType': 0,
-                                                                     'domainId': ''},
-                                                           'toIntf': {'PhysicalInftName': '',
-                                                                      'intfDisplaySchemaObj': {'schema': '',
-                                                                                               'value': ''},
-                                                                      'intfKeyObj': {'schema': '',
-                                                                                     'value': ''}},
-                                                           'topoType': '',
-                                                           'trafficState': {'acl': '',
+                                                                                    'value': ''},
+                                                                        'ipLoc': ''},
+                                                        'hopId': '50f97524-3816-4b1f-9dad-6f1e67a6161c',
+                                                        'isComplete': False,
+                                                        'isGateway': False,
+                                                        'isP2P': False,
+                                                        'mediaId': '',
+                                                        'mediaInfo': {'mediaName': '',
+                                                                        'mediaType': '',
+                                                                        'neat': False,
+                                                                        'topoType': ''},
+                                                        'parentHopId': '',
+                                                        'preHopId': '36d26a0e-e271-4c05-a236-88975a3408af',
+                                                        'sequnce': 3,
+                                                        'techs': [],
+                                                        'toDev': {'devId': '',
+                                                                    'devName': '',
+                                                                    'devType': 0,
+                                                                    'domainId': ''},
+                                                        'toIntf': {'PhysicalInftName': '',
+                                                                    'intfDisplaySchemaObj': {'schema': '',
+                                                                                            'value': ''},
+                                                                    'intfKeyObj': {'schema': '',
+                                                                                    'value': ''},
+                                                                    'ipLoc': ''},
+                                                        'topoType': '',
+                                                        'trafficState': {'acl': '',
                                                                             'alg': -1,
-                                                                            'dev_name': 'BJ-L2-Core-A',
-                                                                            'dev_type': 2001,
-                                                                            'in_intf': 'Port-channel10 '
-                                                                                       '172.24.100.2/30',
+                                                                            'dev_name': 'MPLS '
+                                                                                        '- '
+                                                                                        'AT&T',
+                                                                            'dev_type': 1024,
+                                                                            'in_intf': 'TenGigabitEthernet0/1/1.2-10.78.16.21 '
+                                                                                    '10.78.16.21/30',
                                                                             'in_intf_schema': 'ipIntfs',
                                                                             'in_intf_topo_type': 'L3_Topo_Type',
                                                                             'next_dev_in_intf': '',
@@ -752,162 +618,233 @@ main(nb_url, headers, TenantName, DomainName, username, password, source_device,
                                                                             'out_intf_topo_type': '',
                                                                             'pbr': '',
                                                                             'vrf': ''}}],
-                                      'status': 'Success'}],
-                     'description': '172.24.30.1 -> 172.24.101.2',
-                     'failure_reasons': [],
-                     'path_name': 'L3 Path',
-                     'status': 'Success'},
-                    {'branch_list': [{'failure_reason': 'No L2 connections were '
-                                                        'found',
-                                      'hop_detail_list': [{'fromDev': {'devId': '09f62415-44a2-45d5-9039-150c14936b2e',
-                                                                       'devName': 'NY_Router',
-                                                                       'devType': 2,
-                                                                       'domainId': ''},
-                                                           'fromIntf': {'PhysicalInftName': '',
+                                    'priority': 2,
+                                    'status': 'Failed'},
+                                    {'category': 'Lack of related information',
+                                    'error_code': 412,
+                                    'failure_reason': 'No matching entries were '
+                                                        'found for destination IP '
+                                                        '10.8.1.51 in the VRT',
+                                    'hop_detail_list': [{'fromDev': {'devId': '00000000-0000-0000-0000-000168304301',
+                                                                    'devName': '10.8.30.173',
+                                                                    'devType': 1036,
+                                                                    'domainId': ''},
+                                                        'fromIntf': {'PhysicalInftName': '',
+                                                                        'intfDisplaySchemaObj': {'schema': '',
+                                                                                                'value': ''},
+                                                                        'intfKeyObj': {'schema': '',
+                                                                                    'value': ''},
+                                                                        'ipLoc': ''},
+                                                        'hopId': '836652e5-a1f1-4b77-b564-c20921f13ab1',
+                                                        'isComplete': False,
+                                                        'isGateway': False,
+                                                        'isP2P': False,
+                                                        'mediaId': '1f41649c-c2c0-448b-92e0-801fd88a400a',
+                                                        'mediaInfo': {'mediaName': '10.78.16.128/29',
+                                                                        'mediaType': 'Lan',
+                                                                        'neat': True,
+                                                                        'topoType': 'L3_Topo_Type'},
+                                                        'parentHopId': '',
+                                                        'preHopId': '00000000-0000-0000-0000-000000000000',
+                                                        'sequnce': 0,
+                                                        'techs': [],
+                                                        'toDev': {'devId': '225c5da9-96bd-4bde-9409-11d440c7f30d',
+                                                                    'devName': 'FW01-VNDR-TTEC-AUS-TX-US/act',
+                                                                    'devType': 2009,
+                                                                    'domainId': ''},
+                                                        'toIntf': {'PhysicalInftName': 'inside',
+                                                                    'intfDisplaySchemaObj': {'schema': 'ipIntfs.name',
+                                                                                            'value': 'inside '
+                                                                                                        '10.78.16.129/29'},
+                                                                    'intfKeyObj': {'schema': 'ipIntfs._id',
+                                                                                    'value': '16556a6b-d687-4a06-8039-9ebb55546937'},
+                                                                    'ipLoc': '10.78.16.129/29'},
+                                                        'topoType': 'L3_Topo_Type',
+                                                        'trafficState': {'acl': '',
+                                                                            'alg': -1,
+                                                                            'dev_name': '10.8.30.173',
+                                                                            'dev_type': 1036,
+                                                                            'in_intf': '',
+                                                                            'in_intf_schema': '',
+                                                                            'in_intf_topo_type': '',
+                                                                            'next_dev_in_intf': 'inside '
+                                                                                                '10.78.16.129/29',
+                                                                            'next_dev_in_intf_schema': 'ipIntfs',
+                                                                            'next_dev_in_intf_topo_type': 'L3_Topo_Type',
+                                                                            'next_dev_name': 'FW01-VNDR-TTEC-AUS-TX-US/act',
+                                                                            'next_dev_type': 2009,
+                                                                            'next_hop_ip': '10.78.16.129',
+                                                                            'next_hop_mac': '',
+                                                                            'out_intf': '',
+                                                                            'out_intf_schema': '',
+                                                                            'out_intf_topo_type': '',
+                                                                            'pbr': '',
+                                                                            'vrf': ''}},
+                                                        {'fromDev': {'devId': '225c5da9-96bd-4bde-9409-11d440c7f30d',
+                                                                    'devName': 'FW01-VNDR-TTEC-AUS-TX-US/act',
+                                                                    'devType': 2009,
+                                                                    'domainId': ''},
+                                                        'fromIntf': {'PhysicalInftName': 'inside',
                                                                         'intfDisplaySchemaObj': {'schema': 'intfs.name',
-                                                                                                 'value': 'FastEthernet0/2/0'},
+                                                                                                'value': 'inside'},
                                                                         'intfKeyObj': {'schema': 'intfs._id',
-                                                                                       'value': ''}},
-                                                           'hopId': 'fcf53857-42ac-490b-aa57-dedb8c682450',
-                                                           'isComplete': False,
-                                                           'isP2P': False,
-                                                           'mediaId': '',
-                                                           'mediaInfo': {'mediaName': '',
-                                                                         'mediaType': '',
-                                                                         'neat': False,
-                                                                         'topoType': ''},
-                                                           'parentHopId': '814661b8-3a34-4332-8082-4695e0af72ea',
-                                                           'preHopId': '00000000-0000-0000-0000-000000000000',
-                                                           'sequnce': 0,
-                                                           'toDev': {'devId': '',
-                                                                     'devName': '',
-                                                                     'devType': 0,
-                                                                     'domainId': ''},
-                                                           'toIntf': {'PhysicalInftName': '',
-                                                                      'intfDisplaySchemaObj': {'schema': '',
-                                                                                               'value': ''},
-                                                                      'intfKeyObj': {'schema': '',
-                                                                                     'value': ''}},
-                                                           'topoType': '',
-                                                           'trafficState': {'acl': '',
+                                                                                    'value': '65724b18-2d89-486f-9c42-3e736f5992f6'},
+                                                                        'ipLoc': ''},
+                                                        'hopId': '8dec2ae9-e314-4543-9776-48c477190d71',
+                                                        'isComplete': False,
+                                                        'isGateway': False,
+                                                        'isP2P': False,
+                                                        'mediaId': '',
+                                                        'mediaInfo': {'mediaName': '',
+                                                                        'mediaType': '',
+                                                                        'neat': False,
+                                                                        'topoType': ''},
+                                                        'parentHopId': '',
+                                                        'preHopId': '836652e5-a1f1-4b77-b564-c20921f13ab1',
+                                                        'sequnce': 1,
+                                                        'techs': ['In_ACL'],
+                                                        'toDev': {'devId': '00e59b92-7724-426e-8404-5264f80179ea',
+                                                                    'devName': 'RT02-VNDR-TTEC-AUS-TX-US.citfg.com',
+                                                                    'devType': 2,
+                                                                    'domainId': ''},
+                                                        'toIntf': {'PhysicalInftName': 'TenGigabitEthernet0/1/0.100',
+                                                                    'intfDisplaySchemaObj': {'schema': 'intfs.name',
+                                                                                            'value': 'TenGigabitEthernet0/1/0.100'},
+                                                                    'intfKeyObj': {'schema': 'intfs._id',
+                                                                                    'value': '556c5960-79c9-4383-a491-00914bea3584'},
+                                                                    'ipLoc': ''},
+                                                        'topoType': 'L3_Topo_Type',
+                                                        'trafficState': {'acl': 'ACL '
+                                                                                'outbound '
+                                                                                'on '
+                                                                                'device '
+                                                                                'FW01-VNDR-TTEC-AUS-TX-US/act',
                                                                             'alg': -1,
-                                                                            'dev_name': 'NY_Router',
-                                                                            'dev_type': 2,
-                                                                            'in_intf': '',
-                                                                            'in_intf_schema': '',
-                                                                            'in_intf_topo_type': '',
-                                                                            'next_dev_in_intf': '',
-                                                                            'next_dev_in_intf_schema': '',
-                                                                            'next_dev_in_intf_topo_type': '',
-                                                                            'next_dev_name': '',
-                                                                            'next_dev_type': 0,
-                                                                            'next_hop_ip': '',
+                                                                            'dev_name': 'FW01-VNDR-TTEC-AUS-TX-US/act',
+                                                                            'dev_type': 2009,
+                                                                            'in_intf': 'inside '
+                                                                                    '10.78.16.129/29',
+                                                                            'in_intf_schema': 'ipIntfs',
+                                                                            'in_intf_topo_type': 'L3_Topo_Type',
+                                                                            'next_dev_in_intf': 'TenGigabitEthernet0/1/0.100',
+                                                                            'next_dev_in_intf_schema': 'intfs',
+                                                                            'next_dev_in_intf_topo_type': 'L3_Topo_Type',
+                                                                            'next_dev_name': 'RT02-VNDR-TTEC-AUS-TX-US.citfg.com',
+                                                                            'next_dev_type': 2,
+                                                                            'next_hop_ip': '10.78.16.133',
                                                                             'next_hop_mac': '',
-                                                                            'out_intf': 'FastEthernet0/2/0',
+                                                                            'out_intf': 'inside',
                                                                             'out_intf_schema': 'intfs',
-                                                                            'out_intf_topo_type': 'L2_Topo_Type',
+                                                                            'out_intf_topo_type': 'L3_Topo_Type',
                                                                             'pbr': '',
-                                                                            'vrf': ''}}],
-                                      'status': 'Failed'}],
-                     'description': '172.24.30.5 -> 172.24.30.6',
-                     'failure_reasons': [],
-                     'path_name': 'L2 Path',
-                     'status': 'Failed'},
-                    {'branch_list': [{'failure_reason': 'No L2 connections were '
-                                                        'found',
-                                      'hop_detail_list': [{'fromDev': {'devId': '066da03d-50ea-4fe8-b9a6-f41095c8dd4f',
-                                                                       'devName': 'NY_POPP',
-                                                                       'devType': 2,
-                                                                       'domainId': ''},
-                                                           'fromIntf': {'PhysicalInftName': '',
-                                                                        'intfDisplaySchemaObj': {'schema': '',
-                                                                                                 'value': ''},
-                                                                        'intfKeyObj': {'schema': '',
-                                                                                       'value': ''}},
-                                                           'hopId': 'dcfd6068-4f64-4004-967d-b11340df9fb2',
-                                                           'isComplete': False,
-                                                           'isP2P': False,
-                                                           'mediaId': '',
-                                                           'mediaInfo': {'mediaName': '',
-                                                                         'mediaType': '',
-                                                                         'neat': False,
-                                                                         'topoType': ''},
-                                                           'parentHopId': '0a3ce73b-ebf8-43c6-aa69-a7377e949a85',
-                                                           'preHopId': '00000000-0000-0000-0000-000000000000',
-                                                           'sequnce': 0,
-                                                           'toDev': {'devId': '',
-                                                                     'devName': '',
-                                                                     'devType': 0,
-                                                                     'domainId': ''},
-                                                           'toIntf': {'PhysicalInftName': '',
-                                                                      'intfDisplaySchemaObj': {'schema': '',
-                                                                                               'value': ''},
-                                                                      'intfKeyObj': {'schema': '',
-                                                                                     'value': ''}},
-                                                           'topoType': '',
-                                                           'trafficState': {'acl': '',
+                                                                            'vrf': ''}},
+                                                        {'fromDev': {'devId': '00e59b92-7724-426e-8404-5264f80179ea',
+                                                                    'devName': 'RT02-VNDR-TTEC-AUS-TX-US.citfg.com',
+                                                                    'devType': 2,
+                                                                    'domainId': ''},
+                                                        'fromIntf': {'PhysicalInftName': 'TenGigabitEthernet0/1/1.32',
+                                                                        'intfDisplaySchemaObj': {'schema': 'ipIntfs.name',
+                                                                                                'value': 'TenGigabitEthernet0/1/1.32 '
+                                                                                                        '68.139.194.30/30'},
+                                                                        'intfKeyObj': {'schema': 'ipIntfs._id',
+                                                                                    'value': 'cd1d08d2-ec46-4ed9-850c-ca76241fd258'},
+                                                                        'ipLoc': '68.139.194.30/30'},
+                                                        'hopId': 'bafe41b6-c07b-4fbc-818a-538debca9794',
+                                                        'isComplete': False,
+                                                        'isGateway': False,
+                                                        'isP2P': True,
+                                                        'mediaId': '',
+                                                        'mediaInfo': {'mediaName': '',
+                                                                        'mediaType': '',
+                                                                        'neat': False,
+                                                                        'topoType': ''},
+                                                        'parentHopId': '',
+                                                        'preHopId': '8dec2ae9-e314-4543-9776-48c477190d71',
+                                                        'sequnce': 2,
+                                                        'techs': [],
+                                                        'toDev': {'devId': '56250f01-71ed-58b0-c1d8-7a46616c9f24',
+                                                                    'devName': 'MPLS '
+                                                                                '- '
+                                                                                'Verizon',
+                                                                    'devType': 1024,
+                                                                    'domainId': ''},
+                                                        'toIntf': {'PhysicalInftName': 'TenGigabitEthernet0/1/1.32-68.139.194.29',
+                                                                    'intfDisplaySchemaObj': {'schema': 'ipIntfs.name',
+                                                                                            'value': 'TenGigabitEthernet0/1/1.32-68.139.194.29 '
+                                                                                                        '68.139.194.29/30'},
+                                                                    'intfKeyObj': {'schema': 'ipIntfs._id',
+                                                                                    'value': '42cf2d9b-9866-4c1f-8709-1362e5286385'},
+                                                                    'ipLoc': '68.139.194.29/30'},
+                                                        'topoType': 'L3_Topo_Type',
+                                                        'trafficState': {'acl': '',
                                                                             'alg': -1,
-                                                                            'dev_name': 'NY_POPP',
+                                                                            'dev_name': 'RT02-VNDR-TTEC-AUS-TX-US.citfg.com',
                                                                             'dev_type': 2,
-                                                                            'in_intf': '',
-                                                                            'in_intf_schema': '',
-                                                                            'in_intf_topo_type': '',
-                                                                            'next_dev_in_intf': '',
-                                                                            'next_dev_in_intf_schema': '',
-                                                                            'next_dev_in_intf_topo_type': '',
-                                                                            'next_dev_name': '',
-                                                                            'next_dev_type': 0,
-                                                                            'next_hop_ip': '',
+                                                                            'in_intf': 'TenGigabitEthernet0/1/0.100',
+                                                                            'in_intf_schema': 'intfs',
+                                                                            'in_intf_topo_type': 'L3_Topo_Type',
+                                                                            'next_dev_in_intf': 'TenGigabitEthernet0/1/1.32-68.139.194.29 '
+                                                                                                '68.139.194.29/30',
+                                                                            'next_dev_in_intf_schema': 'ipIntfs',
+                                                                            'next_dev_in_intf_topo_type': 'L3_Topo_Type',
+                                                                            'next_dev_name': 'MPLS '
+                                                                                            '- '
+                                                                                            'Verizon',
+                                                                            'next_dev_type': 1024,
+                                                                            'next_hop_ip': '10.78.16.33',
                                                                             'next_hop_mac': '',
-                                                                            'out_intf': '',
-                                                                            'out_intf_schema': '',
-                                                                            'out_intf_topo_type': '',
+                                                                            'out_intf': 'TenGigabitEthernet0/1/1.32 '
+                                                                                        '68.139.194.30/30',
+                                                                            'out_intf_schema': 'ipIntfs',
+                                                                            'out_intf_topo_type': 'L3_Topo_Type',
                                                                             'pbr': '',
-                                                                            'vrf': ''}}],
-                                      'status': 'Failed'}],
-                     'description': '172.24.31.65 -> 172.24.31.125',
-                     'failure_reasons': [],
-                     'path_name': 'L2 Path',
-                     'status': 'Failed'},
-                    {'branch_list': [{'failure_reason': 'No L2 connections were '
-                                                        'found',
-                                      'hop_detail_list': [{'fromDev': {'devId': 'fe2036f0-4cc3-469e-9df4-6479241392d5',
-                                                                       'devName': 'NY-core-bak',
-                                                                       'devType': 2,
-                                                                       'domainId': ''},
-                                                           'fromIntf': {'PhysicalInftName': '',
+                                                                            'vrf': ''}},
+                                                        {'fromDev': {'devId': '56250f01-71ed-58b0-c1d8-7a46616c9f24',
+                                                                    'devName': 'MPLS '
+                                                                                '- '
+                                                                                'Verizon',
+                                                                    'devType': 1024,
+                                                                    'domainId': ''},
+                                                        'fromIntf': {'PhysicalInftName': '',
                                                                         'intfDisplaySchemaObj': {'schema': '',
-                                                                                                 'value': ''},
+                                                                                                'value': ''},
                                                                         'intfKeyObj': {'schema': '',
-                                                                                       'value': ''}},
-                                                           'hopId': 'a9e784b8-f1d6-4ccc-b94f-ba909c6a20a9',
-                                                           'isComplete': False,
-                                                           'isP2P': False,
-                                                           'mediaId': '',
-                                                           'mediaInfo': {'mediaName': '',
-                                                                         'mediaType': '',
-                                                                         'neat': False,
-                                                                         'topoType': ''},
-                                                           'parentHopId': '0e142a83-4b4f-4c5e-b450-c275104628b5',
-                                                           'preHopId': '00000000-0000-0000-0000-000000000000',
-                                                           'sequnce': 0,
-                                                           'toDev': {'devId': '',
-                                                                     'devName': '',
-                                                                     'devType': 0,
-                                                                     'domainId': ''},
-                                                           'toIntf': {'PhysicalInftName': '',
-                                                                      'intfDisplaySchemaObj': {'schema': '',
-                                                                                               'value': ''},
-                                                                      'intfKeyObj': {'schema': '',
-                                                                                     'value': ''}},
-                                                           'topoType': '',
-                                                           'trafficState': {'acl': '',
+                                                                                    'value': ''},
+                                                                        'ipLoc': ''},
+                                                        'hopId': '59ec2ce6-8e01-492d-a910-5eabc551a9cc',
+                                                        'isComplete': False,
+                                                        'isGateway': False,
+                                                        'isP2P': False,
+                                                        'mediaId': '',
+                                                        'mediaInfo': {'mediaName': '',
+                                                                        'mediaType': '',
+                                                                        'neat': False,
+                                                                        'topoType': ''},
+                                                        'parentHopId': '',
+                                                        'preHopId': 'bafe41b6-c07b-4fbc-818a-538debca9794',
+                                                        'sequnce': 3,
+                                                        'techs': [],
+                                                        'toDev': {'devId': '',
+                                                                    'devName': '',
+                                                                    'devType': 0,
+                                                                    'domainId': ''},
+                                                        'toIntf': {'PhysicalInftName': '',
+                                                                    'intfDisplaySchemaObj': {'schema': '',
+                                                                                            'value': ''},
+                                                                    'intfKeyObj': {'schema': '',
+                                                                                    'value': ''},
+                                                                    'ipLoc': ''},
+                                                        'topoType': '',
+                                                        'trafficState': {'acl': '',
                                                                             'alg': -1,
-                                                                            'dev_name': 'NY-core-bak',
-                                                                            'dev_type': 2,
-                                                                            'in_intf': '',
-                                                                            'in_intf_schema': '',
-                                                                            'in_intf_topo_type': '',
+                                                                            'dev_name': 'MPLS '
+                                                                                        '- '
+                                                                                        'Verizon',
+                                                                            'dev_type': 1024,
+                                                                            'in_intf': 'TenGigabitEthernet0/1/1.32-68.139.194.29 '
+                                                                                    '68.139.194.29/30',
+                                                                            'in_intf_schema': 'ipIntfs',
+                                                                            'in_intf_topo_type': 'L3_Topo_Type',
                                                                             'next_dev_in_intf': '',
                                                                             'next_dev_in_intf_schema': '',
                                                                             'next_dev_in_intf_topo_type': '',
@@ -920,47 +857,55 @@ main(nb_url, headers, TenantName, DomainName, username, password, source_device,
                                                                             'out_intf_topo_type': '',
                                                                             'pbr': '',
                                                                             'vrf': ''}}],
-                                      'status': 'Failed'}],
-                     'description': '172.24.31.193 -> 172.24.31.195',
-                     'failure_reasons': [],
-                     'path_name': 'L2 Path',
-                     'status': 'Failed'},
-                    {'branch_list': [{'failure_reason': 'No L2 connections were '
-                                                        'found',
-                                      'hop_detail_list': [{'fromDev': {'devId': '26e3e35d-4a4a-4fbd-9a40-17d65801b465',
-                                                                       'devName': 'BJ*POP',
-                                                                       'devType': 2,
-                                                                       'domainId': ''},
-                                                           'fromIntf': {'PhysicalInftName': '',
+                                    'priority': 2,
+                                    'status': 'Failed'}],
+                    'description': '10.8.30.173 -> 10.8.1.51',
+                    'failure_reasons': [],
+                    'path_name': 'L3 Path',
+                    'status': 'Failed'},
+                    {'branch_list': [{'category': 'Lack of related information',
+                                    'error_code': 409,
+                                    'failure_reason': 'The L2 connections has '
+                                                        'not been discovered by '
+                                                        'NetBrain.',
+                                    'hop_detail_list': [{'fromDev': {'devId': '225c5da9-96bd-4bde-9409-11d440c7f30d',
+                                                                    'devName': 'FW01-VNDR-TTEC-AUS-TX-US/act',
+                                                                    'devType': 2009,
+                                                                    'domainId': ''},
+                                                        'fromIntf': {'PhysicalInftName': '',
                                                                         'intfDisplaySchemaObj': {'schema': '',
-                                                                                                 'value': ''},
+                                                                                                'value': ''},
                                                                         'intfKeyObj': {'schema': '',
-                                                                                       'value': ''}},
-                                                           'hopId': '72d21630-b8c0-4fd5-b2dc-ae1e5e2256a8',
-                                                           'isComplete': False,
-                                                           'isP2P': False,
-                                                           'mediaId': '',
-                                                           'mediaInfo': {'mediaName': '',
-                                                                         'mediaType': '',
-                                                                         'neat': False,
-                                                                         'topoType': ''},
-                                                           'parentHopId': '04b1aba4-d93b-4ef1-871e-26665c41ea91',
-                                                           'preHopId': '00000000-0000-0000-0000-000000000000',
-                                                           'sequnce': 0,
-                                                           'toDev': {'devId': '',
-                                                                     'devName': '',
-                                                                     'devType': 0,
-                                                                     'domainId': ''},
-                                                           'toIntf': {'PhysicalInftName': '',
-                                                                      'intfDisplaySchemaObj': {'schema': '',
-                                                                                               'value': ''},
-                                                                      'intfKeyObj': {'schema': '',
-                                                                                     'value': ''}},
-                                                           'topoType': '',
-                                                           'trafficState': {'acl': '',
+                                                                                    'value': ''},
+                                                                        'ipLoc': ''},
+                                                        'hopId': '30c47e86-c3a7-4c55-8042-d0b57207cba3',
+                                                        'isComplete': False,
+                                                        'isGateway': False,
+                                                        'isP2P': False,
+                                                        'mediaId': '',
+                                                        'mediaInfo': {'mediaName': '',
+                                                                        'mediaType': '',
+                                                                        'neat': False,
+                                                                        'topoType': ''},
+                                                        'parentHopId': '21cde94f-8dea-4281-a2cc-f8bf8d6b4ae1',
+                                                        'preHopId': '00000000-0000-0000-0000-000000000000',
+                                                        'sequnce': 0,
+                                                        'techs': [],
+                                                        'toDev': {'devId': '',
+                                                                    'devName': '',
+                                                                    'devType': 0,
+                                                                    'domainId': ''},
+                                                        'toIntf': {'PhysicalInftName': '',
+                                                                    'intfDisplaySchemaObj': {'schema': '',
+                                                                                            'value': ''},
+                                                                    'intfKeyObj': {'schema': '',
+                                                                                    'value': ''},
+                                                                    'ipLoc': ''},
+                                                        'topoType': '',
+                                                        'trafficState': {'acl': '',
                                                                             'alg': -1,
-                                                                            'dev_name': 'BJ*POP',
-                                                                            'dev_type': 2,
+                                                                            'dev_name': 'FW01-VNDR-TTEC-AUS-TX-US/act',
+                                                                            'dev_type': 2009,
                                                                             'in_intf': '',
                                                                             'in_intf_schema': '',
                                                                             'in_intf_topo_type': '',
@@ -976,47 +921,55 @@ main(nb_url, headers, TenantName, DomainName, username, password, source_device,
                                                                             'out_intf_topo_type': '',
                                                                             'pbr': '',
                                                                             'vrf': ''}}],
-                                      'status': 'Failed'}],
-                     'description': '172.24.32.225 -> 172.24.32.226',
-                     'failure_reasons': [],
-                     'path_name': 'L2 Path',
-                     'status': 'Failed'},
-                    {'branch_list': [{'failure_reason': 'No L2 connections were '
-                                                        'found',
-                                      'hop_detail_list': [{'fromDev': {'devId': '0c61fd0d-8dca-4b9e-80af-b000236e3c04',
-                                                                       'devName': 'BJ_core_3550',
-                                                                       'devType': 2001,
-                                                                       'domainId': ''},
-                                                           'fromIntf': {'PhysicalInftName': '',
+                                    'priority': 2,
+                                    'status': 'Failed'}],
+                    'description': '10.78.16.129 -> 10.78.16.132',
+                    'failure_reasons': [],
+                    'path_name': 'L2 Path',
+                    'status': 'Failed'},
+                    {'branch_list': [{'category': 'Lack of related information',
+                                    'error_code': 409,
+                                    'failure_reason': 'The L2 connections has '
+                                                        'not been discovered by '
+                                                        'NetBrain.',
+                                    'hop_detail_list': [{'fromDev': {'devId': '225c5da9-96bd-4bde-9409-11d440c7f30d',
+                                                                    'devName': 'FW01-VNDR-TTEC-AUS-TX-US/act',
+                                                                    'devType': 2009,
+                                                                    'domainId': ''},
+                                                        'fromIntf': {'PhysicalInftName': '',
                                                                         'intfDisplaySchemaObj': {'schema': '',
-                                                                                                 'value': ''},
+                                                                                                'value': ''},
                                                                         'intfKeyObj': {'schema': '',
-                                                                                       'value': ''}},
-                                                           'hopId': '966ec229-0cd6-4940-a1b4-60f3c700042e',
-                                                           'isComplete': False,
-                                                           'isP2P': False,
-                                                           'mediaId': '',
-                                                           'mediaInfo': {'mediaName': '',
-                                                                         'mediaType': '',
-                                                                         'neat': False,
-                                                                         'topoType': ''},
-                                                           'parentHopId': '53ce2a5a-314e-4117-8431-b6975dc6b256',
-                                                           'preHopId': '00000000-0000-0000-0000-000000000000',
-                                                           'sequnce': 0,
-                                                           'toDev': {'devId': '',
-                                                                     'devName': '',
-                                                                     'devType': 0,
-                                                                     'domainId': ''},
-                                                           'toIntf': {'PhysicalInftName': '',
-                                                                      'intfDisplaySchemaObj': {'schema': '',
-                                                                                               'value': ''},
-                                                                      'intfKeyObj': {'schema': '',
-                                                                                     'value': ''}},
-                                                           'topoType': '',
-                                                           'trafficState': {'acl': '',
+                                                                                    'value': ''},
+                                                                        'ipLoc': ''},
+                                                        'hopId': 'd43e2741-f3be-497e-8085-e1568583eb0c',
+                                                        'isComplete': False,
+                                                        'isGateway': False,
+                                                        'isP2P': False,
+                                                        'mediaId': '',
+                                                        'mediaInfo': {'mediaName': '',
+                                                                        'mediaType': '',
+                                                                        'neat': False,
+                                                                        'topoType': ''},
+                                                        'parentHopId': '8dec2ae9-e314-4543-9776-48c477190d71',
+                                                        'preHopId': '00000000-0000-0000-0000-000000000000',
+                                                        'sequnce': 0,
+                                                        'techs': [],
+                                                        'toDev': {'devId': '',
+                                                                    'devName': '',
+                                                                    'devType': 0,
+                                                                    'domainId': ''},
+                                                        'toIntf': {'PhysicalInftName': '',
+                                                                    'intfDisplaySchemaObj': {'schema': '',
+                                                                                            'value': ''},
+                                                                    'intfKeyObj': {'schema': '',
+                                                                                    'value': ''},
+                                                                    'ipLoc': ''},
+                                                        'topoType': '',
+                                                        'trafficState': {'acl': '',
                                                                             'alg': -1,
-                                                                            'dev_name': 'BJ_core_3550',
-                                                                            'dev_type': 2001,
+                                                                            'dev_name': 'FW01-VNDR-TTEC-AUS-TX-US/act',
+                                                                            'dev_type': 2009,
                                                                             'in_intf': '',
                                                                             'in_intf_schema': '',
                                                                             'in_intf_topo_type': '',
@@ -1032,19 +985,15 @@ main(nb_url, headers, TenantName, DomainName, username, password, source_device,
                                                                             'out_intf_topo_type': '',
                                                                             'pbr': '',
                                                                             'vrf': ''}}],
-                                      'status': 'Failed'}],
-                     'description': '172.24.100.1 -> 172.24.100.2',
-                     'failure_reasons': [],
-                     'path_name': 'L2 Path',
-                     'status': 'Failed'}],
-      'status': 'Success'}]
+                                    'priority': 2,
+                                    'status': 'Failed'}],
+                    'description': '10.78.16.129 -> 10.78.16.133',
+                    'failure_reasons': [],
+                    'path_name': 'L2 Path',
+                    'status': 'Failed'}],
+    'status': 'Failed'}]
     ########################################################################################################
-    
+
     Calling logout API---------------------------------------------------------------------------------------
     {'statusCode': 790200, 'statusDescription': 'Success.'}
-    
 
-
-```python
-
-```
