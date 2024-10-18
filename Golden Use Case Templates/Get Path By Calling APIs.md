@@ -186,14 +186,20 @@ def calculate_path(headers, token, source_device, destination_device, source_por
     headers["Token"] = token
 
     source_gateway = resolve_device_gateway(token, source_device, headers)
-    gateway = source_gateway["gatewayList"]
-    print ("Detail information of the first gateway in source device: ")
-    pprint.pprint(gateway)
-    print("")
+    gateway = {}
+    if type(source_gateway) is dict:
+        gateway = source_gateway["gatewayList"]
+        print ("Detail information of the first gateway in source device: ")
+        pprint.pprint(gateway)
+        print("")
+
+    else:
+        print('Could not find gateway')
+
     body = {
         "sourceIP" : source_device,                # IP address of the source device.
         "sourcePort" : source_port,
-        "sourceGateway" : gateway[0] if gateway else {},    
+        "sourceGateway" : gateway[0] if type(source_gateway) is dict else {},  
         "destIP" : destination_device,                    # IP address of the destination device.
         "destPort" : destination_port,
         "protocol" : protocol,                # Specify the application protocol, check online help, such as 4 for IPv4.
@@ -232,7 +238,9 @@ def get_path_result(taskID, headers, token):
             print('Path is still running, wait for 5 seconds')
             time.sleep(5)
             status = get_path_status(taskID, headers, token)
-            running_status = status['result']['resultCode'] 
+            running_status_result = status.get('result')
+            if running_status_result is not None:
+                running_status = running_status_result.get('resultCode') 
 
         response = requests.get(Get_Path_Calulation_Result_url, headers = headers, verify = False)
         result = response.json()
