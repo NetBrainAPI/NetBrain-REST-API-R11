@@ -2,7 +2,7 @@
 # Site API Design
 
 ## ***GET*** /V1/CMDB/Sites/SiteInfo{?sitePath}|{?siteId}
-Calling this API to get the basic information of a site by site path or ID.
+Call this API to get the basic information of a site by site path or ID.
 
 ## Detail Information
 
@@ -28,9 +28,9 @@ Calling this API to get the basic information of a site by site path or ID.
 |**Name**|**Type**|**Description**|
 |------|------|------|
 |<img width=100/>|<img width=100/>|<img width=500/>|
-|sitePath^ | string  | Full path name of a site. For example, 'My Network/Site1/Boston/Dev'. |
-|siteId^ | string  |  The unique id of specified site.  . |
->>**Note :** ^ required if the other parameter is null.
+|sitePath^ | string  | Full path name of the site. e.g. 'My Network/Site1/Boston/Dev' |
+|siteId^ | string  |  Unique ID of the specified site. |
+>**Note :** ^ required if the other parameter is null.
 
 ## Headers
 
@@ -56,10 +56,10 @@ Calling this API to get the basic information of a site by site path or ID.
 |<img width=100/>|<img width=100/>|<img width=500/>|
 |statusCode| integer | The returned status code of executing the API.  |
 |statusDescription| string | The explanation of the status code.  |
-|siteInfo | object | An object with the basic information of a site.  |
-|siteInfo.sitePath | string | Full path of site.  |
-|siteInfo.siteId| string | Id of site. This is the only way to get the id of root site. |
-|siteInfo.siteType| integer | Type of this site, 0 root site, 1 container site, 2 leaf site.  |
+|siteInfo | object | An object with the basic information of the site.  |
+|siteInfo.sitePath | string | Full path of the site.  |
+|siteInfo.siteId| string | ID of the site. This is the only way to get the id of root site. |
+|siteInfo.siteType| integer | Type of this site; 0 root site, 1 container site, 2 leaf site.  |
 
 > ***Example***
 
@@ -74,6 +74,19 @@ Calling this API to get the basic information of a site by site path or ID.
       "siteType": 0
     }
   ]
+}
+```
+```python
+{
+  "siteInfo": {
+    "siteId": "732e8ab6-6b69-417d-ad03-2cc447100166",
+    "sitePath": "My Network",
+    "isContainer": true,
+    "children": null,
+    "siteType": 0
+  },
+  "statusCode": 790200,
+  "statusDescription": "Success."
 }
 ```
 
@@ -106,18 +119,17 @@ data = {
 
 try:
     response = requests.get(full_url, params = data, headers = headers, verify = False)
-    #response = requests.delete(full_url, headers = headers, verify = False)
     if response.status_code == 200:
         result = response.json()
         print (result)
     else:
-        print ("Site Created Failed! - " + str(response.text))
+        print ("Failed to get Site Info! - " + str(response.text))
     
 except Exception as e:
     print (str(e)) 
 ```
 
-    Site Created Failed! - {"statusCode":791006,"statusDescription":"site with path My Network/Site2 does not exist."}
+    Failed to get Site Info! - {"statusCode":791006,"statusDescription":"site with path My Network/Site2 does not exist."}
     
 
 # cURL Code from Postman: 
@@ -132,4 +144,4 @@ curl -X GET \
 ```
 
 # Error Examples：
-Same errors with "Delete Site API"
+See API _Delete Site API_ for error examples.
