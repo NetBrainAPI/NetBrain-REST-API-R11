@@ -66,8 +66,8 @@ This API is used to get devices and their attributes data in batch. The response
 |devices.deviceTypeName|string|The type of the returned device; e.g. Cisco Router|
 |devices.customAttribute1|Refer to GDR data type|Customized Attribute 1.|
 |devices.customAttribute2|Refer to GDR data type|Customized Attribute 2.|
-|devices.firstDiscoverTime|string|First discovery time of device.|
-|devices.lastDiscoverTime|string|Last discovery time of device.|
+|devices.firstDiscoverTime|time|First discovery time of device.|
+|devices.lastDiscoverTime|time|Last discovery time of device.|
 |...|...|...|
 |statusCode|integer|Code issued by NetBrain server indicating the execution result.|
 |statusDescription|string|The explanation of the status code.|
