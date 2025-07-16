@@ -3,7 +3,7 @@
 
 ## ***GET*** /V1/CMDB/DeviceGroups
 This API is used to get device groups information. <br>
-Calling this API returns `id` of each devices. These `id` can be used as `deviceGroupID` as a crucial parameter used to call other APIs such as [Get Devices of Group](https://github.com/NetBrainAPI/NetBrain-REST-API-R12.1/blob/main/REST%20APIs%20Documentation/Device%20Group%20Management/Get%20Devices%20of%20Group.md), [Add Devices to Group](https://github.com/NetBrainAPI/NetBrain-REST-API-R12.1/blob/main/REST%20APIs%20Documentation/Device%20Group%20Management/Add%20Devices%20to%20Group.md), [Delete Devices from Group](https://github.com/NetBrainAPI/NetBrain-REST-API-R12.1/blob/main/REST%20APIs%20Documentation/Device%20Group%20Management/Delete%20Devices%20from%20Group.md), etc.
+Calling this API returns `id` of each devices. These `id` can be used as `deviceGroupID` as a crucial parameter used to call other APIs such as [Get Devices of Group](https://github.com/NetBrainAPI/NetBrain-REST-API-R11/blob/main/REST%20APIs%20Documentation/Device%20Group%20Management/Get%20Devices%20of%20Group.md), [Add Devices to Group](https://github.com/NetBrainAPI/NetBrain-REST-API-R11/blob/main/REST%20APIs%20Documentation/Device%20Group%20Management/Add%20Devices%20to%20Group.md), [Delete Devices from Group](https://github.com/NetBrainAPI/NetBrain-REST-API-R11/blob/main/REST%20APIs%20Documentation/Device%20Group%20Management/Delete%20Devices%20from%20Group.md), etc.
 ## Detail Information
 
 > **Title** : Get Device Groups API<br>
