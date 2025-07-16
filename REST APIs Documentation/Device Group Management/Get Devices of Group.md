@@ -2,7 +2,8 @@
 # Device Group API Design
 
 ## ***GET*** /V1/CMDB/DeviceGroups/{deviceGroupID}/devices
-This API call returns devices in a device group.
+This API is used to get devices from a device group.<br>
+The `deviceGroupID` used to call this API can be retrieved from [Get Device Group API](https://github.com/NetBrainAPI/NetBrain-REST-API-R12.1/blob/main/REST%20APIs%20Documentation/Device%20Group%20Management/Get%20Device%20Group%20API.md)
 
 ## Detail Information
 
@@ -46,18 +47,17 @@ This API call returns devices in a device group.
 |**Name**|**Type**|**Description**|
 |------|------|------|
 |<img width=100/>|<img width=100/>|<img width=500/>|
+|devices| string[] | Device name list |
 |statusCode| integer | The returned status code of executing the API.  |
 |statusDescription| string | The explanation of the status code. |
-|devices| string[] | Device name list |
+
 
 > ***Example***
 
 
 ```python
 {
-    "statusCode": 790200,
-    "statusDescription": "Success.",
-    "devices":["bjretrahc001234","bjretrahc003465","bjta007616","bjta000408"]
+    'devices': ['Bos-Core-6500', 'CA-YVR-R1', 'CA-YVR-R2', 'NBLAB-IOS-CE1', 'bjta002114-SW7', 'bjta002115-SW6', 'bjta002303-SW9', 'bjta002444-SW13'], 'statusCode': 790200, 'statusDescription': 'Success.'
 }
 ```
 
@@ -75,7 +75,7 @@ urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 # Set the request inputs
 token = "ad3c616e-5f3d-45e9-9ba1-bb71f003a098"
-deviceGroupID = '9732dca7-9709-4c49-91e1-a2310b8364d9'
+deviceGroupID = '9732dca7-9709-4c49-91e1-a2310b8364d9' # get from Get Device Group API 
 nb_url = "http://192.168.28.143"
 full_url = nb_url + "/ServicesAPI/API/V1/CMDB/DeviceGroups/"+deviceGroupID+"/devices"
 headers = {'Content-Type': 'application/json', 'Accept': 'application/json'}
@@ -87,15 +87,15 @@ try:
         result = response.json()
         print (result)
     else:
-        print ("Get devices from group failed! - " + str(response.text))
+        print ("Failed to Get Devices from the Device Group! - " + str(response.text))
     
 except Exception as e:
     print (str(e)) 
 
 ```
-
-    {'statusCode': 790200, 'statusDescription': 'Success.'}
-    
+```
+{'statusCode': 790200, 'statusDescription': 'Success.'}
+``` 
 
 # cURL Code from Postman
 
@@ -110,57 +110,15 @@ curl -X GET \
 ```
 
 # Error Examples
-
-
-```python
-###################################################################################################################    
-
-
-"""Error 1: Null parameter: the parameter '{}' cannot be null."""
-
+## Error Example 1: You are not allowed to perform this operation
+```
 Input:
-    
-    "name": "",
-    "type": "policy"
+    User does not have the privilege to make changes to shared device groups.
     
 Response:
-    
-    "Parameter cannot be null - 
-        {
-            "statusCode":791000,
-            "statusDescription":"Null parameter: the parameter '{}' cannot be null."
-        }"
-
-###################################################################################################################    
-
-"""Error 2: device group: {}, type: {} already exists."""
-
-Input:
-    
-    "name": "Device Group 1",
-    "type": "policy"
-    
-Response:        
-    
-    "Device Group already exists! - 
-        {
-            "statusCode":791007,
-            "statusDescription":"device group: {}, type: {} already exists."
-        }"
-
-###################################################################################################################    
-
-"""Error 3: You are not allowed to perform the operation."""
-
-Input:
-    
-    "User has no privilege to make change to device groups"
-    
-Response:
-    
-    "You are not allowed to perform the operation. Failed! - 
-        {
-            "statusCode":791000,
-            "statusDescription":"You are not allowed to perform the operation."
-        }"
-        
+    "Failed to Get Devices from the Device Group! - 
+    {
+        "statusCode":799001,
+        "statusDescription":"You are not allowed to perform the operation."
+    }"
+```

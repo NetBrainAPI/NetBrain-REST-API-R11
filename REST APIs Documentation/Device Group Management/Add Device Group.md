@@ -2,7 +2,7 @@
 # Device Group API Design
 
 ## ***POST*** /V1/CMDB/DeviceGroups
-This API call adds a device group
+This API is used to add (create) a device group to the specified path.
 
 ## Detail Information
 
@@ -10,7 +10,7 @@ This API call adds a device group
 
 > **Version** : 03/08/2022
 
-> **API Server URL** : http(s):// IP address of your NetBrain Web API Server /ServicesAPI/API/V1/CMDB/DeviceGroups
+> **API Server URL** : http(s):// IP address of your NetBrain Web API Server/ServicesAPI/API/V1/CMDB/DeviceGroups
 
 > **Authentication** : 
 
@@ -56,9 +56,9 @@ This API call adds a device group
 |**Name**|**Type**|**Description**|
 |------|------|------|
 |<img width=100/>|<img width=100/>|<img width=500/>|
+|deviceGroupID| string | The ID of device group |
 |statusCode| integer | The returned status code of executing the API.  |
 |statusDescription| string | The explanation of the status code. |
-|deviceGroupID| string | The ID of device group |
 
 
 # Full Example :
@@ -91,7 +91,7 @@ try:
         result = response.json()
         print (result)
     else:
-        print ("Create Device Group failed! - " + str(response.text))
+        print ("Failed to Create a Device Group! - " + str(response.text))
 
 except Exception as e: print (str(e))
 ```
@@ -122,7 +122,7 @@ try:
         result = response.json()
         print (result)
     else:
-        print ("Create Device Group failed! - " + str(response.text))
+        print ("Failed to Create a Device Group! - " + str(response.text))
 
 except Exception as e: print (str(e))
 
@@ -140,54 +140,37 @@ curl --location --request POST 'https://unicorn-new.netbraintech.com/ServicesAPI
 '
 ```
 # Error Examples
-```python
-###################################################################################################################    
-
-"""Error 1: Null parameter: the parameter '{}' cannot be null."""
-
+## Error Example 1: Null parameter - parameter {} cannot be null
+```
 Input:
-    
     "name": "",
     "type": "policy"
     
 Response:
-    
     "Parameter cannot be null - 
         {
             "statusCode":791000,
             "statusDescription":"Null parameter: the parameter '{}' cannot be null."
         }"
-
-###################################################################################################################    
-
-"""Error 2: device group: {}, type: {} already exists."""
-
+```
+## Error Example 2: Device Group: {}, Type: {} Already Exists.
+```
 Input:
-    
     "name":"Shared Device Groups/Test Device Group",
     "type": "policy"
     
-Response:        
-    
+Response:
     "Device Group already exists! - 
         {
             "statusCode":791007,
             "statusDescription":"device group: Test Device Group, location in name: Shared Device Groups already exists."
         }"
-
-###################################################################################################################    
-
-"""Error 3: You are not allowed to perform the operation."""
-
+```
+## Error Example 3: You are not allowed to perform this operation
+```
 Input:
-    
-    "User has no privilege to make change to device groups"
+    User does not have the privilege to make changes to shared device groups.
     
 Response:
-    
-    "You are not allowed to perform the operation. Failed! - 
-        {
-            "statusCode":791000,
-            "statusDescription":"You are not allowed to perform the operation."
-        }"
-        
+    Failed to Create a Device Group! - {"statusCode":799001,"statusDescription":"You are not allowed to perform the operation."}
+```

@@ -2,8 +2,8 @@
 # Device API Design
 
 ## ***GET*** /V1/CMDB/DeviceGroups
-Call this API to get device groups information.
-
+This API is used to get device groups information. <br>
+Calling this API returns `id` of each devices. These `id` can be used as `deviceGroupID` as a crucial parameter used to call other APIs such as [Get Devices of Group](https://github.com/NetBrainAPI/NetBrain-REST-API-R12.1/blob/main/REST%20APIs%20Documentation/Device%20Group%20Management/Get%20Devices%20of%20Group.md), [Add Devices to Group](https://github.com/NetBrainAPI/NetBrain-REST-API-R12.1/blob/main/REST%20APIs%20Documentation/Device%20Group%20Management/Add%20Devices%20to%20Group.md), [Delete Devices from Group](https://github.com/NetBrainAPI/NetBrain-REST-API-R12.1/blob/main/REST%20APIs%20Documentation/Device%20Group%20Management/Delete%20Devices%20from%20Group.md), etc.
 ## Detail Information
 
 > **Title** : Get Device Groups API<br>
@@ -56,9 +56,9 @@ Call this API to get device groups information.
 |<img width=100/>|<img width=100/>|<img width=500/>|
 |statusCode| integer | Code issued by NetBrain server indicating the execution result.  |
 |statusDescription| string | The explanation of the status code. |
-|id| string | The ID of the device group. |
+|id| string | The ID of the device group. <br>Use this ID as `deviceGroupID` to call other `Device Group Management APIs`. |
 |name| string | The full path of the device group. |
-|type | integer | The type of device group<br>0: Public group<br>1: Private group<br>2: System group<br>4: Policy device group|
+|type | integer | The type of device group<br>`0`: Public group<br>`1`: Private group<br>`2`: System group<br>`4`: Policy device group|
 
 > ***Example***
 ```python

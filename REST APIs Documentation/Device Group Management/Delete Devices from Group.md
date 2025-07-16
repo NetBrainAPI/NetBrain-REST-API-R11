@@ -2,11 +2,12 @@
 # Device Group API Design
 
 ## ***DELETE*** /V1/CMDB/DeviceGroups/{deviceGroupID}/devices
-This API call deletes devices from device group.
+This API is used to delete devices from the device group. <br>
+The `deviceGroupID` used to call this API can be retrieved from [Get Device Group API](https://github.com/NetBrainAPI/NetBrain-REST-API-R12.1/blob/main/REST%20APIs%20Documentation/Device%20Group%20Management/Get%20Device%20Group%20API.md)
 
 ## Detail Information
 
-> **Title** : Delete devices from Device Group API<br>
+> **Title** : Delete Devices from Device Group API<br>
 
 > **Version** : 10/08/2019.
 
@@ -24,7 +25,7 @@ This API call deletes devices from device group.
 |**Name**|**Type**|**Description**|
 |------|------|------|
 |<img width=100/>|<img width=100/>|<img width=500/>|
-|devices* | string[] | The list of device names you need to add. This parameter is required.  |
+|devices* | string[] | The list of device names to delete from the device group. This parameter is required.  |
 
 > ### ***Example***
 
@@ -77,9 +78,7 @@ body = {
 
 # Full Example :
 
-
 ```python
-
 # import python modules 
 import requests
 import time
@@ -90,7 +89,7 @@ urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 # Set the request inputs
 token = "ad3c616e-5f3d-45e9-9ba1-bb71f003a098"
-deviceGroupID = '9732dca7-9709-4c49-91e1-a2310b8364d9'
+deviceGroupID = '9732dca7-9709-4c49-91e1-a2310b8364d9' # get from Get Device Group API 
 nb_url = "http://192.168.28.143"
 full_url = nb_url + "/ServicesAPI/API/V1/CMDB/DeviceGroups/"+deviceGroupID+"/devices"
 headers = {'Content-Type': 'application/json', 'Accept': 'application/json'}
@@ -106,18 +105,16 @@ try:
         result = response.json()
         print (result)
     else:
-        print ("Add devices to group failed! - " + str(response.text))
+        print ("Failed to Delete Devices from the Device Group! - " + str(response.text))
     
 except Exception as e:
     print (str(e)) 
 ```
-
-    {'statusCode': 790200, 'statusDescription': 'Success.'}
-    
+```
+{'statusCode': 790200, 'statusDescription': 'Success.'}
+```
 
 # cURL Code from Postman
-
-
 ```python
 curl -X DELETE \
   http://192.168.28.143/ServicesAPI/API/V1/CMDB/DeviceGroups/9732dca7-9709-4c49-91e1-a2310b8364d9/devices  \
@@ -129,56 +126,11 @@ curl -X DELETE \
 ```
 
 # Error Examples
-
-```python
-###################################################################################################################    
-
-
-"""Error 1: Null parameter: the parameter '{}' cannot be null."""
-
+## Error Example 1: You are not allowed to perform this operation
+```
 Input:
-    
-    "name": "",
-    "type": "policy"
+    User does not have the privilege to make changes to shared device groups.
     
 Response:
-    
-    "Parameter cannot be null - 
-        {
-            "statusCode":791000,
-            "statusDescription":"Null parameter: the parameter '{}' cannot be null."
-        }"
-
-###################################################################################################################    
-
-"""Error 2: device group: {}, type: {} already exists."""
-
-Input:
-    
-    "name": "Device Group 1",
-    "type": "policy"
-    
-Response:        
-    
-    "Device Group already exists! - 
-        {
-            "statusCode":791007,
-            "statusDescription":"device group: {}, type: {} already exists."
-        }"
-
-###################################################################################################################    
-
-"""Error 3: You are not allowed to perform the operation."""
-
-Input:
-    
-    "User has no privilege to make change to device groups"
-    
-Response:
-    
-    "You are not allowed to perform the operation. Failed! - 
-        {
-            "statusCode":791000,
-            "statusDescription":"You are not allowed to perform the operation."
-        }"
-        
+    Failed to Delete Devices from the Device Group! - {"statusCode":799001,"statusDescription":"You are not allowed to perform the operation."}
+```
