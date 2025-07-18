@@ -3,7 +3,8 @@
 
 ## GET /V1/CMDB/Devices
 
-This API is used to get devices and their attributes data in batch. The response of this API returns a list in JSON format.<br>**Note:<br>1. The API follows the privilege control of NB system. If there is restriction set by Access Control Policy for the target querying resources, the response will not return queried data.<br>2. This API doesn't support any GDR that is not set as displayed, except first discovery time and last discovery time.**
+This API is used to get devices and their attributes data in batch. The response of this API returns a list in JSON format.<br><br>**Note:<br>1. The API follows the privilege control of NB system. If there is restriction set by Access Control Policy for the target querying resources, the response will not return queried data.<br>2. This API doesn't support any GDR that is not set as displayed, except first discovery time and last discovery time.**<br><br>
+<b>Important</b>: It is recommended to pass parameter <i>version=1</i> instead of <i>version=0</i>
 
 ## Detail Information
 
@@ -27,12 +28,13 @@ This API is used to get devices and their attributes data in batch. The response
 
 |**Name**|**Type**|**Description**|
 |------|------|------|
+|||`*` - indicates mandatory field <br> `^` - indicates optional field|
 |hostname|string OR list of string|A list of device hostnames|
 |ignoreCase|boolean|Recognizes as case-insensitive hostname|
 |ip|string OR list of string|A list of device management IPs|
-|||If provided both of hostname and ip, hostname has higher priority. If any of the devices are not found from the provided query parameter, return the found devices as a list in response and add another json key "deviceNotFound", the value is a mixed list of hostnames and IPs that are not found.|
-|*fullattr|integer|Default is 0. <br>0 - return basic device attributes (device id, management IP, hostname, device type, first discover time, last discover time).<br>1 - return all device attributes, including customized attributes|
-|*version|string| 0 - returns basic device attributes (device id, mgmt ip, hostname, device type, first discover time, last discover time) <br> 1 - returns all device properties|
+|||If provided with both of `hostname` and `ip`, `hostname` has higher priority. If any of the devices are not found from the provided query parameter, API returns the found devices as a list in response and add another json key `deviceNotFound`, the value is a mixed list of hostnames and IPs that are not found.|
+|*fullattr|integer|`0` (default) - return basic device attributes (device id, management IP, hostname, device type, first discovery time, last discovery time).<br>`1` - return all device attributes, including customized attributes|
+|*version|string| `0` (default) - returns basic device attributes (device id, mgmt ip, hostname, device type, first discovery time, last discovery time) <br> `1` - returns all device properties<br It is recommended to pass version=1.|
 |skip|integer|The amount of records to be skipped. <br>The value cannot be negative.  <br>If the value is negative, API throws exception `{"statusCode":791001,"statusDescription":"Parameter 'skip' cannot be negative"}`. <br>No upper bound for this parameter.|
 |limit|integer|The up limit amount of device records to return per API call. <br>The value cannot be negative. <br>If the value is negative, API throws exception `{"statusCode":791001,"statusDescription":"Parameter 'limit' cannot be negative"}`. <br>No upper bound for this parameter. If the parameter is not specified in API call, it means there is not limitation setting on the call.|
 |||If only `skip` value is provided, returns the device list with 50 devices information start from the skip number. <br>If only `limit` value is provided, returns from the first device in DB. <br>If both `skip` and `limit` values are provided, returns as required. <br>Error exceptions follows each parameter's description.<br>`Skip` and `limit` parameters are based on the search result from DB. The `limit` value's valid range is 10 - 100; if the assigned value exceeds the range, the server will respond with an error message: `Parameter 'limit' must be greater than or equal to 10 and less than or equal to 100.`  |
@@ -76,6 +78,58 @@ This API is used to get devices and their attributes data in batch. The response
 # Full Example:
 
 # Example 1
+```python
+# import python modules 
+import requests
+import time
+import urllib3
+import pprint
+import json
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+
+# Set the request inputs
+token = "13c7ed6e-781d-4b22-83e7-b1722de4e31d"
+nb_url = "http://192.168.28.79"
+
+full_url = nb_url + "/ServicesAPI/API/V1/CMDB/Devices"
+headers = {'Content-Type': 'application/json', 'Accept': 'application/json'}
+headers["Token"]=token
+
+data = {
+    "version": 1,
+    "hostname":'IPv6Lab-MPLS',
+    "ip": '2020:1111:abcd:ef23:4567:8912:3333:4444',
+}
+
+
+try:
+    response = requests.get(full_url, params = data, headers = headers, verify = False)
+    if response.status_code == 200:
+        result = response.json()
+        print (result)
+    else:
+        print("Get Devices failed! - " + str(response.text))
+except Exception as e:
+    print (str(e)) 
+```
+```python
+{
+  "devices": [
+    {
+      "id": "39090c12-981d-4e42-9e9d-ea84ef0837e1",
+      "mgmtIP": "2020:1111:abcd:ef23:4567:8912:3333:4444",
+      "name": "IPv6Lab-MPLS",
+      "subTypeName": "Cisco Router",
+      "fDiscoveryTime": "2023-08-21T17:10:52Z",
+      "lDiscoveryTime": "2023-08-24T10:42:42Z"
+    }
+  ],
+  "statusCode": 790200,
+  "statusDescription": "Success."
+}
+```
+
+# Example 2: Using `version=0`; it is not recommended to use version=0
 ```python
 # import python modules 
 import requests
@@ -158,7 +212,7 @@ except Exception as e:
 }
 ```
 
-# Example 2: Get All Devices
+# Example 3: Get All Devices
 
 ```python
 full_url = nb_url + "/ServicesAPI/API/V1/CMDB/Devices"
@@ -337,7 +391,7 @@ except Exception as e:
 ```
 
 
-# Example 3: Using `limit`
+# Example 4: Using `limit`
 ```python
 token = "c3d73da6-aa56-4cc7-bc20-f72788a4badc"
 
@@ -380,7 +434,7 @@ ALCSWAVG310P01,BJ-3750-1,EX2200-2,JMCKOPVG310P01,MRFN-CAMCC-F5-AIS-PROD2,ST55CN2
 ```
 
 
-# Example 4: Using `filter`
+# Example 5: Using `filter`
 
 ```python
 full_url = nb_url + "/ServicesAPI/API/V1/CMDB/Devices"
@@ -472,7 +526,7 @@ This cURL command is based on Example 1
 
 ```python
 curl -X GET \
-  'http://192.168.32.17/ServicesAPI/API/V1/CMDB/Devices?ip=&fullattr=1&version=0' \
+  'http://192.168.32.17/ServicesAPI/API/V1/CMDB/Devices?ip=&fullattr=1&version=1' \
   -H 'Content-Type: application/json' \
   -H 'Accept: application/json' \
   -H 'Cache-Control: no-cache' \
