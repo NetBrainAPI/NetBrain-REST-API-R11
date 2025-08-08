@@ -95,18 +95,17 @@ To see the list of all REST APIs view "REST APIs Documentation".<br>
 
 ### [Devices Management](https://github.com/NetBrainAPI/NetBrain-REST-API-R10/tree/main/REST%20APIs%20Documentation/Devices%20Management)
 1) [Create Devices Attribute API](https://github.com/NetBrainAPI/NetBrain-REST-API-R11/blob/main/REST%20APIs%20Documentation/Devices%20Management/Create%20Devices%20Attribute%20API.md)<br>
-2) [Delete Devices Attribute API](https://github.com/NetBrainAPI/NetBrain-REST-API-R11/blob/main/REST%20APIs%20Documentation/Devices%20Management/Delete%20Devices%20Attribute%20API.md)<br>
-3) [Delete Devices API](https://github.com/NetBrainAPI/NetBrain-REST-API-R11/blob/main/REST%20APIs%20Documentation/Devices%20Management/Delete%20Devices%20API.md)<br>
+2) [Delete Devices API](https://github.com/NetBrainAPI/NetBrain-REST-API-R11/blob/main/REST%20APIs%20Documentation/Devices%20Management/Delete%20Devices%20API.md)<br>
+3) [Delete Devices Attribute API](https://github.com/NetBrainAPI/NetBrain-REST-API-R11/blob/main/REST%20APIs%20Documentation/Devices%20Management/Delete%20Devices%20Attribute%20API.md)<br>
 4) [Get Device Attributes API](https://github.com/NetBrainAPI/NetBrain-REST-API-R11/blob/main/REST%20APIs%20Documentation/Devices%20Management/Get%20Device%20Attributes%20API.md)<br>
-5) [Get Device API](https://github.com/NetBrainAPI/NetBrain-REST-API-R11/blob/main/REST%20APIs%20Documentation/Devices%20Management/Get%20Device%20Data%20API.md)<br>
-6) [Get Front Server of A Device API](https://github.com/NetBrainAPI/NetBrain-REST-API-R11/blob/main/REST%20APIs%20Documentation/Devices%20Management/Get%20Front%20Server%20of%20A%20Device%20API.md)<br>
-7) [Get Group Devices API](https://github.com/NetBrainAPI/NetBrain-REST-API-R11/blob/main/REST%20APIs%20Documentation/Devices%20Management/Get%20Group%20Devices%20API.md)<br>
-8) [Set Device Attribute API](https://github.com/NetBrainAPI/NetBrain-REST-API-R11/blob/main/REST%20APIs%20Documentation/Devices%20Management/Set%20Device%20Attribute%20API.md)<br>
-9) [Get Device Configuration API](https://github.com/NetBrainAPI/NetBrain-REST-API-R11/blob/main/REST%20APIs%20Documentation/Devices%20Management/Get%20Device%20Configuration%20API.md)<br>
-10) [Get the connected switch ports of an end system API](https://github.com/NetBrainAPI/NetBrain-REST-API-R11/blob/main/REST%20APIs%20Documentation/Devices%20Management/Get%20the%20connected%20switch%20ports%20of%20an%20end%20system%20API.md)<br>
-11) [Get Device Raw Data API](https://github.com/NetBrainAPI/NetBrain-REST-API-R11/blob/main/REST%20APIs%20Documentation/Devices%20Management/Get%20Device%20Data%20API.md) <br>
-12) [Get Device API Version_1](https://github.com/NetBrainAPI/NetBrain-REST-API-R11/blob/main/REST%20APIs%20Documentation/Devices%20Management/Get%20Device%20API%20Version_1.md)<br>
-13) [Modify NetBrain API Server Credential API](https://github.com/NetBrainAPI/NetBrain-REST-API-R11/blob/main/REST%20APIs%20Documentation/Devices%20Management/Modify%20NetBrain%20API%20Server%20Credential.md)
+5) [Get Device Configuration API](https://github.com/NetBrainAPI/NetBrain-REST-API-R11/blob/main/REST%20APIs%20Documentation/Devices%20Management/Get%20Device%20Configuration%20API.md)<br>
+6) [Get Device Raw Data API](https://github.com/NetBrainAPI/NetBrain-REST-API-R11/blob/main/REST%20APIs%20Documentation/Devices%20Management/Get%20Device%20Data%20API.md) <br>
+7) [Get Devices API](https://github.com/NetBrainAPI/NetBrain-REST-API-R11/blob/main/REST%20APIs%20Documentation/Devices%20Management/Get%20Devices%20API.md)<br>
+8) [Get Front Server of A Device API](https://github.com/NetBrainAPI/NetBrain-REST-API-R11/blob/main/REST%20APIs%20Documentation/Devices%20Management/Get%20Front%20Server%20of%20A%20Device%20API.md)<br>
+9) [Get Group Devices API](https://github.com/NetBrainAPI/NetBrain-REST-API-R11/blob/main/REST%20APIs%20Documentation/Devices%20Management/Get%20Group%20Devices%20API.md)<br>
+10) [Get Connected Switch Ports of an End System API](https://github.com/NetBrainAPI/NetBrain-REST-API-R11/blob/main/REST%20APIs%20Documentation/Devices%20Management/Get%20the%20connected%20switch%20ports%20of%20an%20end%20system%20API.md)<br>
+11) [Modify NetBrain API Server Credential API](https://github.com/NetBrainAPI/NetBrain-REST-API-R11/blob/main/REST%20APIs%20Documentation/Devices%20Management/Modify%20NetBrain%20API%20Server%20Credential.md)
+12) [Set Device Attribute API](https://github.com/NetBrainAPI/NetBrain-REST-API-R11/blob/main/REST%20APIs%20Documentation/Devices%20Management/Set%20Device%20Attribute%20API.md)<br>
 
 
 ### [Discovery Task Management](https://github.com/NetBrainAPI/NetBrain-REST-API-R10/tree/main/REST%20APIs%20Documentation/Discovery%20Task%20Management) 
