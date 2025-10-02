@@ -1,8 +1,11 @@
 
 # Discovery API Design
 
-## ***GET*** /V1/CMDB/Discovery/Tasks
+## ***GET*** /V1/CMDB/Devices/Discovery/Tasks
 Call this API to get all discovery tasks from current domain.
+
+<b>Note</b>: <i>Scheduled System Discovery</i> cannot automatically be triggered via this API, you need to first manually update the Discovery Seed from <i>Discover All Live Network</i> to <i>API Triggered Discovery</i> in NetBrain Domain Management.
+<br>
 >* **Tip:** If there are no discovery tasks in the system, add a new discovery task from the Domain Management page. In the discovery task, select Once on the Frequency tab and Discover the following IPs on the Discovery Seed tab.
 <br><br>
 
