@@ -27,11 +27,12 @@ User can use the SetDeviceAttribute API to set a value for the created attribute
 |------|------|------|
 |<img width=100/>|<img width=100/>|<img width=500/>|
 |attributeName* | string  | The name of the attribute.  |
-|attributeDisplayName* | string  | The display name of the attribute in Device Details pane of NetBrain IE system. |
-|deviceTypeNames | string[]  | Specify the device types that the created attribute applies to.  if set to null, it will apply to all device types. See Device Type Name and ID for available device types.  |
-|dataType* | string/double/int/bool/list/table  | The supported data types of the attribute.  |
-|subDataType | string  | Only available for list or table type property.<br>▪ The data type of each value in a list type property.<br>▪ If the data type is table, specify the sub properties of table type property as follows:<br>--name - the sub property name (displayed as a column header).<br>--displayName - the display name (alias) of the sub property (can be null).<br>--dataType - the data type of the sub property.<br>--isKey (bool) - control whether to use the sub property as the key when comparing the table type property. The default value is false.  |
-|isFullSearch* | bool  | Set whether to use the property as an index in full scope search, including extended search and default search.  |
+|attributeDisplayName* | string | The display name of the attribute in <i>Device Details</i> of NetBrain IE system. |
+|deviceTypeNames | list | Specify the list of device types in which the created attribute would apply to. <br>When it is set to an empty list `[]`, the new device attribute will apply to all device types. <br>The value of this parameter corresponds to Device Type under <i>Multi-Vendor Support</i> in <i>Tenant Management</i>. |
+|dataType* | string/double/int/bool/list/table/time/mac  | The supported data types of the attribute.  |
+|subDataType | string | This parameter is only available for `list` type property.<br> The data type of each value in a list type property. |
+|columns | list of objects | This parameter is only available for `table` type property.<br>▪ `name`(string) - the sub property name (displayed as a column header).<br>▪ `displayName`(string) - the display name (alias) of the sub property (can be null).<br>▪ `dataType`(string) - the data type of the sub property.<br>▪ `isKey` (bool) - control whether to use the sub property as the key when comparing the table type property. The default value is False. |
+|isFullSearch* | bool | Set whether to use the property as an index in full scope search, including extended search and default search.  |
 
 > ***Example***
 
@@ -40,9 +41,8 @@ User can use the SetDeviceAttribute API to set a value for the created attribute
 body = {
           "attributeName": "newAttribute",
           "attributeDisplayName": "New Attribute",
-          "deviceTypeNames": "null",
+          "deviceTypeNames": [],
           "dataType": "string",
-          "subDataType": "null",
           "isFullSearch": True
         }
 ```
@@ -84,17 +84,11 @@ body = {
     "statusCode": 790200,
     "statusDescription": "Success."
 }
-
-# If customer don't have enough privilige:
-{
-    "statusCode":795003,
-    "statusDescription":"Insufficient permissions: the current user has insufficient permissions to perform the requested operation. The user has no tenant or domain access permission.sharePolicyManagement"
-}
 ```
 
 # Full Example
 
-
+## Example 1: Successful API Call for `string` type Device Attribute
 ```python
 # import python modules 
 import requests
@@ -109,11 +103,10 @@ token = "855b2da0-306b-4c29-b37f-be09e33e2d02"
 nb_url = "http://192.168.28.79"
 
 # Create device attribute
-attributeName = "newAttribute05"
-attributeDisplayName = "New Attribute05"
-deviceTypeNames = "null"
+attributeName = "newAttribute1"
+attributeDisplayName = "New Attribute1"
+deviceTypeNames = []
 dataType = "string"
-subDataType = "null"
 isFullSearch = True
 
 headers = {'Content-Type': 'application/json', 'Accept': 'application/json'}
@@ -125,7 +118,6 @@ body={
         "attributeDisplayName": attributeDisplayName,
         "deviceTypeNames": deviceTypeNames, 
         "dataType": dataType,
-        "subDataType" : subDataType,
         "isFullSearch": isFullSearch
     }
 
@@ -135,18 +127,61 @@ try:
         result = response.json()
         print (result)
     else:
-        print ("Create device attribute failed! - " + str(response.text))
+        print ("Failed to Create Device Attribute! - " + str(response.text))
+    
+except Exception as e:
+    print (str(e))    
+```
+```python
+    {'statusCode': 790200, 'statusDescription': 'Success.'}
+```
+
+## Example 2: Successful API Call for `table` type Device Attribute
+```python
+attributeName = "newAttribute2"
+attributeDisplayName = "New Attribute2"
+deviceTypeNames = []
+dataType = "table"
+isFullSearch = True
+columns = [
+    {
+        "name":"column1",
+        "displayName":"CO1",
+        "dataType":"string"
+    }
+]
+
+headers = {'Content-Type': 'application/json', 'Accept': 'application/json'}
+headers["Token"]=token
+full_url= nb_url + "/ServicesAPI/API/V1/CMDB/Devices/Attributes"
+
+body={
+        "attributeName": attributeName,
+        "attributeDisplayName": attributeDisplayName,
+        "deviceTypeNames": deviceTypeNames, 
+        "dataType": dataType,
+        "isFullSearch": isFullSearch,
+        "columns": columns
+    }
+
+try:
+    response = requests.post(full_url, data=json.dumps(body), headers=headers, verify=False)
+    if response.status_code == 200:
+        result = response.json()
+        print (result)
+    else:
+        print ("Failed to Create Device Attribute! - " + str(response.text))
     
 except Exception as e:
     print (str(e))    
 
 ```
 
+```python
     {'statusCode': 790200, 'statusDescription': 'Success.'}
-    
+```
 
 # cURL Code from Postman
-
 
 ```python
 curl -X POST \
@@ -160,76 +195,49 @@ curl -X POST \
         "attributeDisplayName": "attributeDisplayName",
         "deviceTypeNames": "null", 
         "dataType": "string",
-        "subDataType" : "null",
         "isFullSearch": true
       }'
 ```
 
 # Error Examples:
 
-
+## Error Example 1: Insufficient Privilege
 ```python
-###################################################################################################################    
+{
+    "statusCode":795003,
+    "statusDescription":"Insufficient permissions: the current user has insufficient permissions to perform the requested operation. The user has no tenant or domain access permission.sharePolicyManagement"
+}
+```
 
-"""Error 1: empty one or some required body parameters"""
-
+## Error Example 2: One or More Required Body Parameters are Empty
+```python
 Input:
-    
     attributeName = "" # empty required body parameters
     attributeDisplayName = "New Attribute"
     deviceTypeNames = "" # empty required body parameters
     dataType = "string"
-    subDataType = "null"
     isFullSearch = True
     
 Response:
-    
     "Create device attribute failed! - 
         {
             "statusCode":791000,
             "statusDescription":"Null parameter: the parameter 'attributeName' cannot be null."
         }"
- 
-###################################################################################################################    
-
-"""Error 2: duplicate attribute name"""
-
+```
+## Error Example 3: Duplicate Attribute Name
+```python
 Input:
-    
-    attributeName = "newAttribute" # attribute name as newAttribute already exist.
+    attributeName = "newAttribute" # attribute name newAttribute already exista.
     attributeDisplayName = "New Attribute"
     deviceTypeNames = "null" 
     dataType = "string"
-    subDataType = "null"
     isFullSearch = True
     
 Response:
-    
     "Create device attribute failed! - 
         {
             "statusCode":791007,
             "statusDescription":"attribute newAttribute already exists."
         }"
-    
-###################################################################################################################    
-
-"""Error 2: two attributes, only different on name"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-
-Input:
-    
-    attributeName = "newAttribute1" # only name different from "newAttribute"
-    attributeDisplayName = "New Attribute"
-    deviceTypeNames = "null" 
-    dataType = "string"
-    subDataType = "null"
-    isFullSearch = True
-    
-Response:
-    
-    "{
-        "statusCode": 790200,
-        "statusDescription": "Success."
-    }"
-        
 ```
-
