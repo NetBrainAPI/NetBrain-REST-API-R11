@@ -2,7 +2,7 @@
 # Path API Design
 
 ## ***GET*** /V1/CMDB/Path/Calculation/{taskID}/Status	
-Call this API to get the status information of a path calculated through the Calculate Path API. 
+Call this API to get the status information of the path calculated through the [Calculate Path API](https://github.com/NetBrainAPI/NetBrain-REST-API-R12.3/blob/main/REST%20APIs%20Documentation/Path%20Management/Calculate%20Path%20API.md). 
 
 ## Detail Information
 
@@ -54,13 +54,11 @@ Call this API to get the status information of a path calculated through the Cal
 |<img width=100/>|<img width=100/>|<img width=500/>|
 |result| Object | The status result of path calculation. |
 |resultCode| integer | The status code of path calculation. |
-|resultDescription| string | The description of resultCode.<br>0 = Initialized<br>1 = Running <br>2 = Succeeded <br>3 = Failed <br>4 = Canceled|
+|resultDescription| string | The description of `resultCode`. <br>`0` = Initialized<br>`1` = Running <br>`2` = Succeeded <br>`3` = Failed <br>`4` = Canceled|
 |statusCode| integer | The returned status code of executing the API.  |
 |statusDescription| string | The explanation of the status code.  |
 
 > ***Example***
-
-
 ```python
 {
     "result": {
@@ -73,8 +71,6 @@ Call this API to get the status information of a path calculated through the Cal
 ```
 
 # Full Example:
-
-
 ```python
 # import python modules 
 import requests
@@ -100,7 +96,7 @@ try:
         print (result)
     else:
         
-        print ("Get path calulation code failed! - " + str(response.text))
+        print ("Failed to Get Path Calculation Status! - " + str(response.text))
     
 except Exception as e:
     print (str(e))  

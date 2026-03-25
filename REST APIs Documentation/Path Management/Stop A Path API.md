@@ -3,7 +3,7 @@
 
 
 ## ***POST*** /V1/CMDB/Path/Calculation/Stop{?taskId}
-This function is used to force stop a path calculation process.
+This API is used to force stop a path calculation process.
 
 ## Detail Information
 
@@ -27,7 +27,7 @@ This function is used to force stop a path calculation process.
 
 |**Name**|**Type**|**Description**|
 |------|------|------|
-| taskId* | string  | The task ID retrieved from Calculate a Path. |
+| taskId* | string  | The task ID retrieved from `Calculate Path API`. |
 
 
 ## Headers
@@ -43,7 +43,7 @@ This function is used to force stop a path calculation process.
 
 |**Name**|**Type**|**Description**|
 |------|------|------|
-| token | string  | Authentication token, get from login API. |
+| token | string  | Authentication token, retrieved from Login API. |
 
 
 ## Response
@@ -55,9 +55,6 @@ This function is used to force stop a path calculation process.
 |result| bool | The execution (force stop) result. |
 
 > ***Example***
-
-
-
 ```python
 { 
     "result": true, 
@@ -67,9 +64,6 @@ This function is used to force stop a path calculation process.
 ```
 
 # Full Example:
-
-
-
 ```python
 # import python modules 
 import requests
@@ -96,17 +90,10 @@ try:
         result = response.json()
         print (result)
     else:
-        print ("Stop Path Failed! - " + str(response.text))
+        print ("Failed to Stop Path! - " + str(response.text))
 except Exception as e:
     print (str(e))
 ```
-
-    Stop Path Failed! - {"statusCode":793001,"statusDescription":"Inner exception. please check system log(default location: log/NgThirdAPI.log)"}
-    
-
-# cURL Code from Postman
-
-
 ```python
-
+    Failed to Stop Path! - {"statusCode":793001,"statusDescription":"Inner exception. please check system log(default location: log/NgThirdAPI.log)"}
 ```

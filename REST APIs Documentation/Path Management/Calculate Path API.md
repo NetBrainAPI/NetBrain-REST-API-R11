@@ -2,13 +2,14 @@
 # Path API Design
 
 ## ***POST*** /V1/CMDB/Path/Calculation
-Call this API to calculate the path from endpoint A (source) to endpoint B (destination). It returns the result of the calculated path in the form of a path ID (a string), and you can use the path ID in the GetPath API as the input parameter to get each hop information of the path.
+Call this API to calculate the path from endpoint A (source) to endpoint B (destination). <br> 
+It returns the result of the calculated path in the form of a path ID (a string), which can be used as the input parameter to get each hop information of the path via [Get Path Calculation Result API](https://github.com/NetBrainAPI/NetBrain-REST-API-R12.3/blob/main/REST%20APIs%20Documentation/Path%20Management/Get%20Path%20Calculation%20Result%20API.md) or [Get Path Calculation Overview API](https://github.com/NetBrainAPI/NetBrain-REST-API-R12.3/blob/main/REST%20APIs%20Documentation/Path%20Management/Get%20Path%20Calculation%20Overview%20API.md).
 
 ## Detail Information
 
 > **Title** : Calculate Path API<br>
 
-> **Version** : 01/30/2019.
+> **Version** : 05/09/2023.
 
 > **API Server URL** : http(s)://IP address of NetBrain Web API Server/ServicesAPI/API/V1/CMDB/Path/Calculation
 
@@ -26,14 +27,23 @@ Call this API to calculate the path from endpoint A (source) to endpoint B (dest
 |<img width=100/>|<img width=100/>|<img width=500/>|
 |sourceIP* | string  | Input the IP address of the source device.  |
 |sourcePort | integer  | Specify the source protocol port If TCP/UDP is selected such as 23 for telnet. This parameter can be null.  |
-|sourceGwIP* | string  | the ip address of the gateway device.  |
-|sourceGwDev* | string  | the hostname of the gateway device.  |
-|sourceGwIntf* | string  | the name of the gateway interface.  |
-|destIP* | string  | Input the IP address of the destination device.  |
+|sourceGateway* | Object  | Source gateway resolve result, end user **MUST** use gateway resolve result.  |
+|sourceGateway.type* | string | Result relies on Step 1, can be disregarded for customer.|
+|sourceGateway.gatewayName* | string  | The name of the gateway. Result from Step 1.  |
+|gatewayList.payload*| dict | Internal data structure, can be disregarded for customer.  |
+|destIP* | string  | Input IP address of the destination device.  |
 |destPort* | integer  | Specify the destination protocol port If TCP/UDP is selected, such as 23 for telnet. This parameter can be null.  |
-|pathAnalysisSet* | integer  | Specify the path type to calculate:<br>▪ 1 - L3 Path<br>▪ 2 - L2 Path<br>▪ 3 - L3 Active Path |
 |protocol* | integer  | Specify the application protocol. see list_of_ip_protocol_numbers, such as 4 for IPv4.  |
-|isLive | integer  | ▪ 0 - Use data From current Baseline<br>▪ 1 - Use data via live access |
+|isLive* | bool  | ▪ `False` - Use data From current Baseline<br>▪ `True` - Use data via live access |
+|advanced |object |advance setting.|
+|advanced.debugMode | bool	|The debug mode of trigger API.|
+|advanced.calcWhenDeniedByACL| bool | Whether to keep calculate when the process been denied by ACL.|
+|advanced.calcWhenDeniedByPolicy |bool |Whether to keep calculate when the process been denied by policy.|
+|advanced.calcL3ActivePath| bool |Whether to calculate L3 active path.|
+|advanced.useCommandsWithArguments| bool |Whether to use the commands with arguments inside.|
+|advanced.enablePathFixup |bool |Whether to enable the path fixup feature.|
+|routingScheme |integer |Scheme for routing process and with two values 0 and 1 can be selected. 0 - `UNICAST`, 1 - `MULTICAST`.|
+|group |string |Group name for Unicast calculation. (The group must have value when the routing scheme is 0).|
 
 ## Parameters(****required***)
 
@@ -54,20 +64,18 @@ Call this API to calculate the path from endpoint A (source) to endpoint B (dest
 |**Name**|**Type**|**Description**|
 |------|------|------|
 |<img width=100/>|<img width=100/>|<img width=500/>|
-| token | string  | Authentication token, get from login API. |
+| token | string  | Authentication token, retrieved from Login API. |
 
 ## Response
 
 |**Name**|**Type**|**Description**|
 |------|------|------|
 |<img width=100/>|<img width=100/>|<img width=500/>|
-|taskID| string | The task ID of the calculated path. You can call the hop information of the path with the taskID in the GetPath API. |
+|taskID| string | The task ID of the calculated path. <br> Use this as `taskID` input parameter in Get Path Calculation Result API or Get Path Calculation Overview API to get the hop information of the path. |
 |statusCode| integer | The returned status code of executing the API.  |
 |statusDescription| string | The explanation of the status code.  |
 
 > ***Example***
-
-
 ```python
 {
     'taskID': 'b0bae173-af8c-418b-8dc4-1ffdb0e897fa',
@@ -77,197 +85,84 @@ Call this API to calculate the path from endpoint A (source) to endpoint B (dest
 ```
 
 # Full Example:
-
-
 ```python
-# import python modules 
-import requests
-import time
-import urllib3
-import pprint
-import json
-urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+Calculate_Path_url = nb_url + "/ServicesAPI/API/V1/CMDB/Path/Calculation"
 
-# Set the request inputs
-token = "c4edcb21-8d27-42a3-be0c-7e3b53b608c7"
-nb_url = "http://192.168.28.79"
-full_url = nb_url + "/ServicesAPI/API/V1/CMDB/Path/Calculation"
-headers = {'Content-Type': 'application/json', 'Accept': 'application/json'}
-headers["Token"] = token
+gwName = source_gateway["gatewayList"][0]["gatewayName"]
+gwType = source_gateway["gatewayList"][0]["type"]
+gw = source_gateway["gatewayList"][0]["payload"]
 
-sourceIP = "10.10.3.253"
-sourcePort = 0
-sourceGwIP = "10.10.3.253"
-sourceGwDev = "GW2Lab"
-sourceGwIntf =  "GigabitEthernet0/0.10"
-destIP = "172.24.32.225"
+sourceIP = source_device
+sourcePort = None #can be 8080
+destIP = destination_device
 destPort = 0
-pathAnalysisSet = 1
+pathAnalysisSet = 2
 protocol = 4
-isLive = False
+isLive = True
 
 body = {
-            "sourceIP" : sourceIP,                # IP address of the source device.
-            "sourcePort" : sourcePort,
-            "sourceGwDev" : sourceGwDev,          # Hostname of the gateway device.
-            "sourceGwIP" : sourceGwIP,            # Ip address of the gateway device.
-            "sourceGwIntf" : sourceGwIntf,        # Name of the gateway interface.
-            "destIP" : destIP,                    # IP address of the destination device.
-            "destPort" : destPort,
-            "pathAnalysisSet" : pathAnalysisSet,  # 1:L3 Path; 2:L2 Path; 3:L3 Active Path
-            "protocol" : protocol,                # Specify the application protocol, check online help, such as 4 for IPv4.
-            "isLive" : isLive                     # False: Current Baseline; True: Live access
-    } 
+    "sourceIP" : sourceIP,                # IP address of the source device.
+    "sourcePort" : sourcePort,
+    "sourceGateway" : {
+        "type" : gwType,
+        "gatewayName" : gwName,
+        "payload" : gw
+    },    
+    "destIP" : destIP,                    # IP address of the destination device.
+    "destPort" : destPort,
+    "protocol" : protocol,                # Specify the application protocol, check online help, such as 4 for IPv4.
+    "isLive" : isLive                     # False: Current Baseline; True: Live access
+} 
 
-try:
-    response = requests.post(full_url, data = json.dumps(body), headers = headers, verify = False)
-    if response.status_code == 200:
-        result = response.json()
-        print (result)
-    else:
-        print ("Create module attribute failed! - " + str(response.text))
+
+def calculate_path(Calculate_Path_url, body, headers, token):
+    headers["Token"] = token
     
-except Exception as e:
-    print (str(e)) 
+    try:
+        response = requests.post(Calculate_Path_url, data = json.dumps(body), headers = headers, verify = False)
+        if response.status_code == 200:
+            result = response.json()
+            return (result)
+        else:
+            return ("Failed to Calculate Path! - " + str(response.text))
+
+    except Exception as e:
+        return (str(e)) 
+
+res = calculate_path(Calculate_Path_url, body, headers, token)
+res
 ```
-
-    {'taskID': 'acf3309e-99b1-4369-8e4b-79e065fd807e', 'statusCode': 790200, 'statusDescription': 'Success.'}
-    
+```python
+    {'taskID': 'dcf25655-81a9-4cfe-82ca-aef80a698971',
+     'statusCode': 790200,
+     'statusDescription': 'Success.'}
+```
 
 # cURL Code from Postman
-
-
 ```python
 curl -X POST \
-  http://192.168.28.79/ServicesAPI/API/V1/CMDB/Path/Calculation \
+  http://192.168.28.173/ServicesAPI/API/V1/CMDB/Path/Calculation \
+  -H 'Accept: */*' \
+  -H 'Cache-Control: no-cache' \
+  -H 'Connection: keep-alive' \
   -H 'Content-Type: application/json' \
-  -H 'Postman-Token: f91143d0-c8c5-4a00-8ba6-908087452898' \
+  -H 'Host: 192.168.28.173' \
+  -H 'Postman-Token: 8e0bc75f-58c8-48fe-869a-0535f6385590,b98e9443-bf6d-4b12-be03-bf580231fa38' \
+  -H 'User-Agent: PostmanRuntime/7.13.0' \
+  -H 'accept-encoding: gzip, deflate' \
   -H 'cache-control: no-cache' \
-  -H 'token: c4edcb21-8d27-42a3-be0c-7e3b53b608c7' \
+  -H 'content-length: 581' \
+  -H 'token: 76f95ffa-fc1b-4eb6-a503-75760185f2a5' \
   -d '{
-            "sourceIP" : "10.10.3.253",                
-            "sourcePort" : 0,
-            "sourceGwIP" : "10.10.3.253",          
-            "sourceGwDev" : "GW2Lab",            
-            "sourceGwIntf" : "GigabitEthernet0/0.10",        
-            "destIP" : "172.24.32.225",                    
-            "destPort" : 0,
-            "pathAnalysisSet" : 1,  
-            "protocol" : 4,                
-            "isLive" : 1                     
-    } '
-```
-
-# Error Examples:
-
-
-```python
-###################################################################################################################    
-
-"""Error 1: empty inputs"""
-
-Input:
-    
-    sourceIP = "" # Can not be null
-    sourcePort = "" 
-    sourceGwIP = "" # Can not be null
-    sourceGwDev = "" # Can not be null
-    sourceGwIntf =  "" # Can not be null
-    destIP = "" # Can not be null
-    destPort = ""
-    pathAnalysisSet = None # Can not be null
-    protocol = None # Can not be null
-    isLive = ""
-    
-Response:
-    
-    "Create module attribute failed! - 
-    {"statusCode":791000,"statusDescription":"Null parameter: the parameter 'sourceIP' cannot be null."}
-
-    Create module attribute failed! - 
-    {"statusCode":791000,"statusDescription":"Null parameter: the parameter 'destIP' cannot be null."}
-
-    Create module attribute failed! - 
-    {"statusCode":791000,"statusDescription":"Null parameter: the parameter 'protocol' cannot be null."}
-
-    Create module attribute failed! - 
-    {"statusCode":791001,"statusDescription":"Invalid parameter: the parameter 'pathAnalysisSet' is invalid."}
-
-    Create module attribute failed! - 
-    {"statusCode":791000,"statusDescription":"Null parameter: the parameter 'sourceGwIP' cannot be null."}
-
-    Create module attribute failed! - 
-    {"statusCode":791000,"statusDescription":"Null parameter: the parameter 'sourceGwDev' cannot be null."}
-
-    Create module attribute failed! - 
-    {"statusCode":791000,"statusDescription":"Null parameter: the parameter 'sourceGwIntf' cannot be null."}"
-    
-###################################################################################################################    
-
-"""Error 2: wrong format of Ips"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-
-Input:
-
-        sourceIP = "10103253" # "10.10.3.253"
-        sourcePort = ""
-        sourceGwIP = "10.10.3.253"
-        sourceGwDev = "GW2Lab"
-        sourceGwIntf =  "GigabitEthernet0/0.10"
-        destIP = "172.24.32.225"
-        destPort = ""
-        pathAnalysisSet = 1
-        protocol = 4
-        isLive = ""
-
-Response:
-            "{
-                'taskID': '061c0aa3-396d-4900-b350-23a6e57f4891', 
-                'statusCode': 790200, 
-                'statusDescription': 'Success.'
-            }"
-            
- #--------------------------------------------------------------------------------------------------------------------           
-
-Input:""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-
-        sourceIP = "10.10.3.253" 
-        sourcePort = ""
-        sourceGwIP = "10103253" # "10.10.3.253"
-        sourceGwDev = "GW2Lab"
-        sourceGwIntf =  "GigabitEthernet0/0.10"
-        destIP = "172.24.32.225" 
-        destPort = ""
-        pathAnalysisSet = 1
-        protocol = 4
-        isLive = ""
-
-Response:
-            "{
-                'taskID': '061c0aa3-396d-4900-b350-23a6e57f4891', 
-                'statusCode': 790200, 
-                'statusDescription': 'Success.'
-            }"
-            
- #--------------------------------------------------------------------------------------------------------------------  
-
-Input:""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-
-        sourceIP = "10.10.3.253" 
-        sourcePort = ""
-        sourceGwIP = "10.10.3.253" 
-        sourceGwDev = "GW2Lab"
-        sourceGwIntf =  "GigabitEthernet0/0.10"
-        destIP = "1722432225" # "172.24.32.225"
-        destPort = ""
-        pathAnalysisSet = 1
-        protocol = 4
-        isLive = ""
-
-Response:
-            "{
-                'taskID': '061c0aa3-396d-4900-b350-23a6e57f4891', 
-                'statusCode': 790200, 
-                'statusDescription': 'Success.'
-            }"
-            
+"sourceIP": "172.24.33.10",
+ "sourcePort": None,
+ "sourceGateway": {
+ 	"type": "Device Interface",
+    "gatewayName": "BJ_L2_test_1.Vlan10(172.24.33.10)",
+    "payload": "{"ip": "172.24.33.10", "endPointInfo": {"deviceId": "101deae6-8d11-47d2-b87f-b69cbe7ba2ce", "interfaceId": "9a40c2e8-12ba-4556-bb2f-9545f776afb7"}, "device": "BJ_L2_test_1", "deviceId": "101deae6-8d11-47d2-b87f-b69cbe7ba2ce", "interface": "Vlan10", "interfaceId": "9a40c2e8-12ba-4556-bb2f-9545f776afb7", "prefixLen": 26}"},
+ "destIP": "172.24.33.135",
+ "destPort": 0,
+ "protocol": 4,
+ "isLive": True	
+}'
 ```

@@ -2,15 +2,17 @@
 # Path API Design
 
 ## ***GET*** /V1/CMDB/Path/Calculation/{taskID}/Result	
-Call this API to get the hop information of a path calculated through the CalcPath API. 
+Call this API to get the hop information of the calculated path achieved through [Calculate Path API](https://github.com/NetBrainAPI/NetBrain-REST-API-R12.3/blob/main/REST%20APIs%20Documentation/Path%20Management/Calculate%20Path%20API.md). 
 
-If the Calculation Path task is not finished yet or failed, user will get an error with messsage reminding.which means you don't need to wait anymore before trying to query the result.
+If the [Calculation Path](https://github.com/NetBrainAPI/NetBrain-REST-API-R12.3/blob/main/REST%20APIs%20Documentation/Path%20Management/Calculate%20Path%20API.md) task is not yet finished or failed, the API will prompt an error with message accordingly. 
 
-All directed links in the result consists of a directed path grapth, which contains all possible reachable paths from the original source to the destination specified in path calculation
+All directed links in the result consists of a directed path graph, which contains all possible reachable paths from the original source to the destination specified in path calculation.
+
+***Note:***: It is recommended to use Get Path Calculation Overview API as its result offers more details.
 
 ## Detail Information
 
-> **Title** : Get Path Calulation Result API<br>
+> **Title** : Get Path Calculation Result API<br>
 
 > **Version** : 01/30/2019.
 
@@ -68,8 +70,6 @@ All directed links in the result consists of a directed path grapth, which conta
 |statusDescription| string | The explanation of the status code.  |
 
 > ***Example***
-
-
 ```python
 {
     "hopList": [
@@ -158,18 +158,16 @@ try:
         print (result)
     else:
         
-        print ("Get path calulation result failed! - " + str(response.text))
+        print ("Failed to Get Path Calculation Result! - " + str(response.text))
     
 except Exception as e:
     print (str(e)) 
 ```
-
+```python
     {'hopList': [{'hopId': '01383651-8bec-41fd-bea2-c3a673ac394c', 'srcDeviceName': 'R5', 'inboundInterface': 'Ethernet0/0', 'mediaName': '123.10.1.12/30', 'dstDeviceName': 'R3', 'outboundInterface': 'Ethernet0/2', 'nextHopIdList': ['5775d104-f2e7-409d-92f5-8e6b1ed9594a']}, {'hopId': '5775d104-f2e7-409d-92f5-8e6b1ed9594a', 'srcDeviceName': 'R3', 'inboundInterface': 'Ethernet0/1', 'mediaName': '123.10.1.8/30', 'dstDeviceName': 'R2', 'outboundInterface': 'Ethernet0/1', 'nextHopIdList': ['3f28a2db-fd15-4f3c-b4ab-de7cc2d7cad9']}, {'hopId': '3f28a2db-fd15-4f3c-b4ab-de7cc2d7cad9', 'srcDeviceName': 'R2', 'inboundInterface': 'Ethernet0/2', 'mediaName': '123.10.1.16/30', 'dstDeviceName': 'R4', 'outboundInterface': 'Ethernet0/0', 'nextHopIdList': []}, {'hopId': 'b4b4ddc7-02c5-41bd-b0d3-a7e72d3100e9', 'srcDeviceName': 'R5', 'inboundInterface': 'Ethernet0/1', 'mediaName': '123.10.1.4/30', 'dstDeviceName': 'R1', 'outboundInterface': 'Ethernet0/1', 'nextHopIdList': ['3e4b6c71-8e6e-4845-b6c3-acdca0ac7377']}, {'hopId': '3e4b6c71-8e6e-4845-b6c3-acdca0ac7377', 'srcDeviceName': 'R1', 'inboundInterface': 'Ethernet0/2', 'mediaName': '123.10.1.0/30', 'dstDeviceName': 'R4', 'outboundInterface': 'Ethernet0/1', 'nextHopIdList': []}], 'statusCode': 790200, 'statusDescription': 'Success.'}
-    
+```
 
 # cURL Code from Postman:
-
-
 ```python
 curl -X GET \
   http://192.168.28.79/ServicesAPI/API/V1/CMDB/Path/Calculation/498c10a7-0011-4a59-a4cd-0258af3edd19/Result \
@@ -179,8 +177,6 @@ curl -X GET \
 ```
 
 # Error Examples:
-
-
 ```python
 ###################################################################################################################    
 
