@@ -2,7 +2,7 @@
 # Path API Design
 
 ## ***GET*** /V1/CMDB/Path/Calculation/{taskID}/Status	
-Call this API to get the status information of the path calculated through the [Calculate Path API](https://github.com/NetBrainAPI/NetBrain-REST-API-R12.3/blob/main/REST%20APIs%20Documentation/Path%20Management/Calculate%20Path%20API.md). 
+Call this API to get the status information of the path calculated through the [Calculate Path API](https://github.com/NetBrainAPI/NetBrain-REST-API-R12/blob/main/REST%20APIs%20Documentation/Path%20Management/Calculate%20Path%20API.md). 
 
 ## Detail Information
 
