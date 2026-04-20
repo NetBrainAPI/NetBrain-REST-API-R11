@@ -42,7 +42,7 @@ The option for data to be retrieved in this task is 'Built-in Live Data' which t
 |isBuildL2Topo | bool  | Determine whether to build L2 topology. This field is optional and the default value is false.  |
 |isBuildIPsecVPNTopology | bool  | Determine whether to build IPsecVPN topology. This field is optional and the default value is false. |
 |isRecalculateDynamicDeviceGroups | bool  | Determine whether to recalculate dynamic device groups. This field is optional and the default value is false.  |
-|sRecalculateSite | bool  | Determine whether to rebuild sites. This field is optional and the default value is false.|
+|isRecalculateSite | bool  | Determine whether to rebuild sites. This field is optional and the default value is false.|
 |isRecalculateMPLSVirtualRouteTables | bool  | Determine whether to recalculate MPLS Virtual Route Table. This field is optional and the default value is false.  |
 |isbuildDefaultDeviceDataView | bool  | Determine whether to build default device data view. This field is optional and the default value is false.  |
 |isEnable | bool  | Determine whether to enable the task. This field is optional and the default value is true. |
